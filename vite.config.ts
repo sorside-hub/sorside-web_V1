@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: 'Sorside',
-          short_name: 'Sorside',
-          description: 'Platform personal seorang musisi independen. Minimalist rebellion.',
+          name: 'sorside',
+          short_name: 'sorside',
+          description: 'Ruang untuk musik, cerita, dan sisi lain yang tidak terlihat.',
           theme_color: '#0a0a0a',
           background_color: '#0a0a0a',
           display: 'standalone',
