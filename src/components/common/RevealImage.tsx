@@ -96,8 +96,8 @@ export const RevealImage: React.FC<RevealImageProps> = ({
       const rect = containerRef.current.getBoundingClientRect();
       const wh = window.innerHeight;
       
-      const zoneTop = wh * 0.35;
-      const zoneBottom = wh * 0.65;
+      const zoneTop = wh * 0.30;
+      const zoneBottom = wh * 0.70;
 
       const pxTop = zoneTop - rect.top;
       const pctTop = (pxTop / rect.height) * 100;
