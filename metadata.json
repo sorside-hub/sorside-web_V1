@@ -1,6 +1,6 @@
 {
-  "name": "Sorside",
-  "description": "Platform personal seorang musisi independen. Minimalist rebellion.",
+  "name": "sorside",
+  "description": "Ruang untuk musik, cerita, dan sisi lain yang tidak terlihat.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
