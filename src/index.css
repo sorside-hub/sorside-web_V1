@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Anton', sans-serif;
+  --font-serif: 'Playfair Display', serif;
+}
+
+@layer base {
+  :root {
+    --background: #f4f4f4;
+    --surface: #ffffff;
+    --surface-hover: #e5e5e5;
+    --text-primary: #121212;
+    --text-secondary: #5a5a5a;
+    --border: #d4d4d4;
+    --accent: #d90429;
+  }
+
+  .dark {
+    --background: #0a0a0a;
+    --surface: #121212;
+    --surface-hover: #1e1e1e;
+    --text-primary: #f5f5f5;
+    --text-secondary: #a3a3a3;
+    --border: #262626;
+    --accent: #ef233c;
+  }
+
+  body {
+    @apply bg-background text-text-primary font-sans antialiased;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+@layer utilities {
+  .markdown-body h1, 
+  .markdown-body h2, 
+  .markdown-body h3, 
+  .markdown-body h4 {
+    @apply font-display text-text-primary mt-12 mb-6 uppercase tracking-wide;
+  }
+  .markdown-body h2 { @apply text-2xl; }
+  .markdown-body h3 { @apply text-xl; }
+  
+  .markdown-body p {
+    @apply mb-6;
+  }
+  
+  .markdown-body a {
+    @apply text-text-primary border-b border-text-primary hover:text-accent hover:border-accent transition-colors;
+  }
+  
+  .markdown-body ul, .markdown-body ol {
+    @apply mb-6 pl-6 space-y-2;
+  }
+  .markdown-body ul { @apply list-disc; }
+  .markdown-body ol { @apply list-decimal; }
+  
+  .markdown-body blockquote {
+    @apply border-l-2 border-text-primary pl-6 py-2 my-8 italic text-text-primary;
+  }
+  
+  .markdown-body blockquote > :last-child {
+    @apply mb-0;
+  }
+
+  .markdown-body strong, 
+  .markdown-body b {
+    @apply font-bold text-text-primary;
+  }
+}
