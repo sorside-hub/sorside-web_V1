@@ -62,6 +62,13 @@ export const LoneTransmissionCard: React.FC = () => {
       </div>
 
       {/* Cassette / Vinyl Style Capsule */}
+      {!latestRelease ? (
+        <div className="border border-border bg-surface p-12 flex items-center justify-center">
+          <p className="font-mono text-sm tracking-widest text-text-secondary uppercase text-center">
+            // NO TRANSMISSION DETECTED
+          </p>
+        </div>
+      ) : (
       <div className="border border-border bg-surface hover:border-text-secondary transition-colors p-4 sm:p-6 space-y-5">
         <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-start">
           {/* Cover Art with subtle vinyl ring effect */}
@@ -139,7 +146,6 @@ export const LoneTransmissionCard: React.FC = () => {
                 <span>{isThisPlaying ? 'PAUSE' : 'QUICK LISTEN'}</span>
               </button>
             )}
-
             <Link
               to={`/discography/${releaseSlug}`}
               className="inline-flex items-center gap-1.5 bg-background border border-border px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-text-primary hover:border-accent hover:text-accent transition-colors"
@@ -150,6 +156,7 @@ export const LoneTransmissionCard: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
     </section>
   );
 };

@@ -12,24 +12,7 @@ export const ThoughtFragments: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const displayItems = articles.length > 0 ? articles.slice(0, 3) : [
-    {
-      id: 'tf-1',
-      title: 'Tentang Kamar, Jam 3 Pagi, dan Kebisingan Pikiran',
-      slug: 'tentang-kamar-jam-3-pagi',
-      category: 'Thoughts',
-      date: '2024-08-20',
-      snippet: 'Di luar sunyi, tapi di kepala seperti ada ratusan frekuensi yang saling bertabrakan. SORSIDE lahir bukan dari studio mewah, tapi dari sudut kamar yang sempit saat malam menolak tidur.',
-    },
-    {
-      id: 'tf-2',
-      title: 'Menolak Menjadi Palsu: Kenapa Ruang Ini Ada',
-      slug: 'menolak-menjadi-palsu',
-      category: 'Origins',
-      date: '2024-07-14',
-      snippet: 'Media sosial menuntut kita tampak selesai dan rapi. Di sini aku cuma ingin menaruh apa adanya—kegagalan, kebingungan, dan suara-suara mentah yang tidak perlu dipoles untuk menyenangkan orang lain.',
-    }
-  ];
+  const displayItems = articles.length > 0 ? articles.slice(0, 3) : [];
 
   return (
     <section className="space-y-4">
@@ -51,6 +34,13 @@ export const ThoughtFragments: React.FC = () => {
       </div>
 
       {/* Thought Cards Grid */}
+      {displayItems.length === 0 ? (
+        <div className="border border-border bg-surface p-12 flex items-center justify-center">
+          <p className="font-mono text-sm tracking-widest text-text-secondary uppercase text-center">
+            // TIDAK ADA ARTIKEL
+          </p>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 gap-4">
         {displayItems.map((item) => (
           <Link
@@ -83,6 +73,7 @@ export const ThoughtFragments: React.FC = () => {
           </Link>
         ))}
       </div>
+      )}
     </section>
   );
 };
