@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "Transmission": {
+      "title": "Transmission",
+      "description": "Anonymous story or signal broadcasted to Frequency",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string", "description": "Author permanent public ID like freq-582" },
+        "authorAlias": { "type": "string", "description": "Optional author custom nickname" },
+        "content": { "type": "string", "description": "Text content of the signal" },
+        "tag": { "type": "string", "description": "Optional topic tag" },
+        "timestamp": { "type": "string", "description": "Readable timestamp" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "replies": { "type": "array" }
+      },
+      "required": ["authorId", "content"]
+    },
+    "FrequencyIdentity": {
+      "title": "FrequencyIdentity",
+      "description": "Anonymous account credential and recovery record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Permanent public ID like freq-582" },
+        "key": { "type": "string", "description": "Secret recovery passkey like pass-84920" },
+        "alias": { "type": "string", "description": "Custom nickname" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "key"]
+    }
+  },
+  "firestore": {
+    "/transmissions/{transmissionId}": {
+      "schema": "Transmission",
+      "description": "Public broadcasts collection"
+    },
+    "/frequency_identities/{identityKey}": {
+      "schema": "FrequencyIdentity",
+      "description": "Anonymous account registry keyed by recovery passkey"
+    }
+  }
+}

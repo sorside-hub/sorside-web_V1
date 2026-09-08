@@ -19,10 +19,14 @@ service cloud.firestore {
       // Update balasan & likes jika ada
       allow update: if true;
 
-      // Hanya pembuat (authorId sesuai) yang boleh menghapus
-      allow delete: if resource.data.authorId == request.auth.uid 
-                    || resource.data.authorId == request.resource.data.authorId
-                    || true; // Bebas dihapus oleh perangkat lokal
+      // Bebas dihapus oleh author dari client
+      allow delete: if true;
+    }
+
+    // Koleksi Identitas Anonim & Kunci Pemulihan
+    match /frequency_identities/{identityKey} {
+      allow read: if true;
+      allow create, update, delete: if true;
     }
   }
 }

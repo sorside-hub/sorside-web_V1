@@ -151,7 +151,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                   onClick={() => onAuthorClick?.(tx.authorId, tx.authorAlias)}
                   className="font-mono font-bold text-sm text-text-primary hover:underline cursor-pointer truncate"
                 >
-                  {primaryId}
+                  {tx.authorAlias || tx.authorId}
                 </span>
 
                 {tx.tag && (
@@ -239,7 +239,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                             isHost ? 'text-accent' : 'text-text-primary'
                           }`}
                         >
-                          {replyAuthor}
+                          {reply.authorAlias || reply.authorId}
                         </span>
 
                         {isHost && (

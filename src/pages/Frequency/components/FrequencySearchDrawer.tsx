@@ -11,6 +11,7 @@ interface FrequencySearchDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   transmissions: Transmission[];
+  identitiesMap?: Record<string, string>;
   onSelectTopic: (topic: string) => void;
   onSelectAuthor: (authorId: string, authorAlias?: string) => void;
   onSelectTransmission: (tx: Transmission) => void;
@@ -22,6 +23,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
   isOpen,
   onClose,
   transmissions,
+  identitiesMap = {},
   onSelectTopic,
   onSelectAuthor,
   onSelectTransmission,
@@ -84,7 +86,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
     return topicStats.filter((t) => t.name.toLowerCase().includes(q));
   }, [topicStats, query]);
 
-  // Cari Transmisi & Penulis langsung di drawer
+  // Cari Transmisi & Penulis/Identitas langsung di drawer
   const searchResults = useMemo(() => {
     const q = query.toLowerCase().trim();
     if (!q) return { transmissions: [], authors: [] };
@@ -96,30 +98,54 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
       return contentMatch || tagMatch;
     }).slice(0, 8); // Batasi 8 teratas agar ringan
 
-    // Cari sinyal author / alias
+    // Hitung jumlah transmisi per author ID
+    const txCountMap = new Map<string, number>();
+    transmissions.forEach((tx) => {
+      txCountMap.set(tx.authorId, (txCountMap.get(tx.authorId) || 0) + 1);
+    });
+
     const authorMap = new Map<string, { id: string; alias?: string; count: number }>();
+
+    // 1. Tambahkan dari data transmisi
     transmissions.forEach((tx) => {
       const matchId = tx.authorId.toLowerCase().includes(q);
       const matchAlias = tx.authorAlias && tx.authorAlias.toLowerCase().includes(q);
       if (matchId || matchAlias) {
-        const existing = authorMap.get(tx.authorId);
-        if (existing) {
-          existing.count += 1;
-        } else {
+        if (!authorMap.has(tx.authorId)) {
           authorMap.set(tx.authorId, {
             id: tx.authorId,
             alias: tx.authorAlias,
-            count: 1,
+            count: txCountMap.get(tx.authorId) || 0,
           });
         }
       }
     });
 
+    // 2. Tambahkan dari identitiesMap (termasuk user yang belum pernah buat postingan/0 sinyal)
+    if (identitiesMap) {
+      Object.entries(identitiesMap).forEach(([id, alias]) => {
+        const matchId = id.toLowerCase().includes(q);
+        const matchAlias = alias && alias.toLowerCase().includes(q);
+        if (matchId || matchAlias) {
+          if (!authorMap.has(id)) {
+            authorMap.set(id, {
+              id,
+              alias: alias || undefined,
+              count: txCountMap.get(id) || 0,
+            });
+          } else {
+            const existing = authorMap.get(id)!;
+            if (alias) existing.alias = alias;
+          }
+        }
+      });
+    }
+
     return {
       transmissions: matchedTx,
-      authors: Array.from(authorMap.values()).slice(0, 4),
+      authors: Array.from(authorMap.values()).slice(0, 6),
     };
-  }, [transmissions, query]);
+  }, [transmissions, identitiesMap, query]);
 
   if (!isOpen) return null;
 
@@ -194,7 +220,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
               spellCheck="false"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari topic #, sinyal ID, kata..."
+              placeholder="cari topic, id, alias"
               className="w-full bg-surface border border-border/90 pl-9 pr-9 py-2.5 font-mono text-xs text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent transition-all"
             />
             {query && (
@@ -227,12 +253,12 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
         {/* Drawer Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           
-          {/* JIKA ADA KETIKAN & DITEMUKAN PENULIS */}
+          {/* JIKA ADA KETIKAN & DITEMUKAN PENULIS / IDENTITAS */}
           {!isQueryEmpty && searchResults.authors.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-secondary uppercase tracking-wider font-semibold">
                 <Sparkles size={13} className="text-accent" />
-                <span>Penulis Ditemukan</span>
+                <span>Identitas / Penulis Ditemukan</span>
               </div>
               <div className="space-y-1.5">
                 {searchResults.authors.map((auth) => (
@@ -246,7 +272,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
                         {auth.alias || auth.id}
                       </div>
                       <div className="font-mono text-[10px] text-text-secondary">
-                        {auth.id} • {auth.count} sinyal
+                        {auth.alias ? `id: ${auth.id} • ` : ''}{auth.count} sinyal
                       </div>
                     </div>
                     <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-accent transition-colors" />
@@ -316,9 +342,16 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
                     className="p-3 border border-border/70 bg-surface/40 hover:bg-surface hover:border-accent cursor-pointer transition-all space-y-1.5"
                   >
                     <div className="flex items-center justify-between font-mono text-[10px] text-text-secondary">
-                      <span className="font-bold text-text-primary truncate">
-                        {tx.authorAlias || tx.authorId}
-                      </span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-bold text-text-primary truncate">
+                          {tx.authorAlias || tx.authorId}
+                        </span>
+                        {tx.authorAlias && (
+                          <span className="text-[9px] text-text-secondary/70 truncate">
+                            {tx.authorId}
+                          </span>
+                        )}
+                      </div>
                       {tx.tag && (
                         <span className="shrink-0 ml-2 font-mono font-semibold flex items-center gap-0.5">
                           <span className="text-accent font-bold">#</span>

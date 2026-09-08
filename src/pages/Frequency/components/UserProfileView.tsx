@@ -85,13 +85,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   };
 
   const handleRemoveAlias = () => {
-    if (confirm('Lepas nama alias dan kembali menggunakan ID acak?')) {
-      if (onUpdateAlias) {
-        onUpdateAlias('');
-      }
-      setEditAliasVal('');
-      setIsEditingAlias(false);
+    if (onUpdateAlias) {
+      onUpdateAlias('');
     }
+    setEditAliasVal('');
+    setIsEditingAlias(false);
   };
 
   // 1. Ambil semua transmisi yang dibuat oleh user ini
@@ -170,7 +168,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
       </div>
 
       <div className="max-w-xl mx-auto px-4 sm:px-0 space-y-6">
-        {/* 2. KARTU IDENTITAS FREKUENSI (SUPER BERSIH - TANPA LABEL DO своего / ALIAS ACTIVE) */}
+        {/* 2. KARTU IDENTITAS FREKUENSI */}
         <div className="border-b border-border/70 pb-6 space-y-4">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center font-mono text-base font-bold text-text-primary tracking-tighter shrink-0">
@@ -189,8 +187,15 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 )}
               </div>
 
-              {/* Tanggal Sinyal Pertama - Langsung bersih tanpa embel-embel "ID:" atau "Alias Active" */}
-              <div className="font-mono text-[11px] text-text-secondary/80">
+              {/* ID subtext jika user menggunakan alias */}
+              {targetUser.alias && (
+                <div className="font-mono text-xs text-text-secondary">
+                  <span>id: {targetUser.id}</span>
+                </div>
+              )}
+
+              {/* Tanggal Sinyal Pertama */}
+              <div className="font-mono text-[11px] text-text-secondary/80 pt-0.5">
                 <span>Sinyal pertama terdeteksi: </span>
                 <span className="text-text-primary">{firstSignalText}</span>
               </div>
@@ -244,7 +249,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   <button
                     onClick={handleRemoveAlias}
                     className="font-mono text-xs text-text-secondary hover:text-red-400 flex items-center gap-1.5 py-1.5 px-2.5 sm:px-3 border border-border/70 hover:border-red-400/60 transition-colors uppercase tracking-wider whitespace-nowrap"
-                    title="Hapus alias dan kembali menggunakan ID acak"
+                    title="Hapus alias dan kembali menggunakan ID"
                   >
                     <LogOut size={12} />
                     <span>Lepas Alias</span>

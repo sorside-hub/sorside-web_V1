@@ -7,28 +7,48 @@ import { TransmissionComposerModal } from './components/TransmissionComposerModa
 import { TransmissionItem, Transmission, Reply } from './components/TransmissionItem';
 import { TransmissionDetailModal } from './components/TransmissionDetailModal';
 import { UserProfileView, UserProfileTarget } from './components/UserProfileView';
+import { IdentityRecoveryModal } from './components/IdentityRecoveryModal';
 import { 
   subscribeTransmissions, 
+  subscribeIdentities,
   createTransmissionToFirestore, 
   addReplyToFirestore, 
-  deleteTransmissionFromFirestore 
+  deleteTransmissionFromFirestore,
+  generatePermanentId,
+  generatePasskey,
+  syncIdentityToFirestore,
+  cleanupGhostIdentities,
+  UserIdentity
 } from '../../services/frequencyService';
 
 export const Frequency: React.FC = () => {
-  // User Identity State (Stored in LocalStorage, lazily initialized to prevent id mismatches)
+  // User Identity State (Stored in LocalStorage & Synchronized to Firestore)
   const [myId, setMyId] = useState(() => {
     try {
       let id = localStorage.getItem('sorside_freq_id');
-      if (!id) {
-        const randomNum = Math.floor(100 + Math.random() * 900);
-        id = `ss-${randomNum}`;
+      if (!id || id.startsWith('ss-')) {
+        id = generatePermanentId();
         localStorage.setItem('sorside_freq_id', id);
       }
       return id;
     } catch {
-      return 'ss-582';
+      return 'freq-582';
     }
   });
+
+  const [myPasskey, setMyPasskey] = useState(() => {
+    try {
+      let key = localStorage.getItem('sorside_freq_key');
+      if (!key) {
+        key = generatePasskey();
+        localStorage.setItem('sorside_freq_key', key);
+      }
+      return key;
+    } catch {
+      return 'pass-84920';
+    }
+  });
+
   const [myAlias, setMyAlias] = useState(() => {
     try {
       return localStorage.getItem('sorside_freq_alias') || '';
@@ -36,6 +56,9 @@ export const Frequency: React.FC = () => {
       return '';
     }
   });
+
+  // Map of all identities in Firestore (id -> latest alias)
+  const [identitiesMap, setIdentitiesMap] = useState<Record<string, string>>({});
 
   // Feed & Loading State (Tanpa template fallback dummy)
   const [transmissions, setTransmissions] = useState<Transmission[]>([]);
@@ -49,6 +72,7 @@ export const Frequency: React.FC = () => {
   const [viewProfileTarget, setViewProfileTarget] = useState<UserProfileTarget | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
 
   // Search state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -303,18 +327,16 @@ export const Frequency: React.FC = () => {
     }
   };
 
-  // Sync dengan Firestore secara Real-Time
+  // Sync dengan Firestore secara Real-Time (Transmissions & Master Identitas/Alias)
   useEffect(() => {
-    const unsubscribe = subscribeTransmissions(
+    const unsubscribeTransmissions = subscribeTransmissions(
       (remoteTransmissions) => {
         setTransmissions(remoteTransmissions || []);
         setIsLoading(false);
-        // Jika ada detail modal yang terbuka, sinkronkan juga datanya secara live
-        setSelectedTransmission(prev => {
-          if (!prev) return null;
-          const updated = (remoteTransmissions || []).find(t => t.id === prev.id);
-          return updated || prev;
-        });
+        // Pembersihan rutin ID hantu (0 postingan & tidak aktif > 30 hari)
+        if (remoteTransmissions) {
+          cleanupGhostIdentities(remoteTransmissions);
+        }
       },
       (error) => {
         console.warn('[Frequency] Gagal memuat data dari Firestore:', error);
@@ -322,21 +344,32 @@ export const Frequency: React.FC = () => {
       }
     );
 
+    const unsubscribeIdentities = subscribeIdentities((map) => {
+      setIdentitiesMap(map);
+    });
+
     return () => {
-      unsubscribe();
+      unsubscribeTransmissions();
+      unsubscribeIdentities();
     };
   }, []);
 
-  // Initialize or load identity from localStorage
+  // Initialize or load identity from localStorage & sync with Firestore
   useEffect(() => {
     try {
       let id = localStorage.getItem('sorside_freq_id');
-      if (!id) {
-        const randomNum = Math.floor(100 + Math.random() * 900);
-        id = `ss-${randomNum}`;
+      if (!id || id.startsWith('ss-')) {
+        id = generatePermanentId();
         localStorage.setItem('sorside_freq_id', id);
       }
       setMyId(id);
+
+      let key = localStorage.getItem('sorside_freq_key');
+      if (!key) {
+        key = generatePasskey();
+        localStorage.setItem('sorside_freq_key', key);
+      }
+      setMyPasskey(key);
 
       if (!localStorage.getItem('sorside_freq_created')) {
         const now = new Date();
@@ -344,10 +377,13 @@ export const Frequency: React.FC = () => {
         localStorage.setItem('sorside_freq_created', formatted);
       }
 
-      const alias = localStorage.getItem('sorside_freq_alias');
+      const alias = localStorage.getItem('sorside_freq_alias') || '';
       if (alias) {
         setMyAlias(alias);
       }
+
+      // Sync identity to Firestore
+      syncIdentityToFirestore({ id, key, alias: alias || undefined });
     } catch {
       // ignore storage issues
     }
@@ -362,6 +398,8 @@ export const Frequency: React.FC = () => {
       } else {
         localStorage.removeItem('sorside_freq_alias');
       }
+      // Sync update to Firestore
+      syncIdentityToFirestore({ id: myId, key: myPasskey, alias: clean || undefined });
     } catch {
       // ignore
     }
@@ -370,17 +408,29 @@ export const Frequency: React.FC = () => {
     }
   };
 
-  const handleRegenerateId = () => {
-    const randomNum = Math.floor(100 + Math.random() * 900);
-    const newId = `ss-${randomNum}`;
-    setMyId(newId);
+  const handleIdentityRecovered = (recovered: UserIdentity) => {
+    setMyId(recovered.id);
+    setMyPasskey(recovered.key);
+    setMyAlias(recovered.alias || '');
+
     try {
-      localStorage.setItem('sorside_freq_id', newId);
+      localStorage.setItem('sorside_freq_id', recovered.id);
+      localStorage.setItem('sorside_freq_key', recovered.key);
+      if (recovered.alias) {
+        localStorage.setItem('sorside_freq_alias', recovered.alias);
+      } else {
+        localStorage.removeItem('sorside_freq_alias');
+      }
     } catch {
       // ignore
     }
+
     if (viewProfileTarget?.isMe) {
-      setViewProfileTarget(prev => prev ? { ...prev, id: newId } : null);
+      setViewProfileTarget({
+        id: recovered.id,
+        alias: recovered.alias || undefined,
+        isMe: true
+      });
     }
   };
 
@@ -456,6 +506,9 @@ export const Frequency: React.FC = () => {
       }
       return alias.slice(0, 2).toUpperCase();
     }
+    if (id.startsWith('freq-')) {
+      return id.slice(5);
+    }
     if (id.startsWith('ss-')) {
       return id.slice(3);
     }
@@ -468,9 +521,53 @@ export const Frequency: React.FC = () => {
     setInitialReplyTarget(targetReplyUser || null);
   };
 
+  // Transmisi dengan mapping alias dinamis real-time
+  const syncedTransmissions = React.useMemo(() => {
+    return transmissions.map((tx) => {
+      const currentAuthorAlias = (tx.authorId === myId && myAlias)
+        ? myAlias
+        : (identitiesMap[tx.authorId] !== undefined ? identitiesMap[tx.authorId] : tx.authorAlias);
+
+      const updatedReplies = (tx.replies || []).map((r) => {
+        const currentReplyAlias = (r.authorId === myId && myAlias)
+          ? myAlias
+          : (identitiesMap[r.authorId] !== undefined ? identitiesMap[r.authorId] : r.authorAlias);
+        return {
+          ...r,
+          authorAlias: currentReplyAlias || undefined
+        };
+      });
+
+      return {
+        ...tx,
+        authorAlias: currentAuthorAlias || undefined,
+        replies: updatedReplies
+      };
+    });
+  }, [transmissions, identitiesMap, myId, myAlias]);
+
+  // Transmisi aktif terpilih untuk modal detail (tersinkronisasi aliasnya)
+  const activeSelectedTransmission = React.useMemo(() => {
+    if (!selectedTransmission) return null;
+    const latest = syncedTransmissions.find(t => t.id === selectedTransmission.id);
+    return latest || selectedTransmission;
+  }, [selectedTransmission, syncedTransmissions]);
+
+  // Target profil aktif (tersinkronisasi aliasnya)
+  const activeProfileTarget = React.useMemo(() => {
+    if (!viewProfileTarget) return null;
+    const latestAlias = viewProfileTarget.isMe 
+      ? myAlias 
+      : (identitiesMap[viewProfileTarget.id] !== undefined ? identitiesMap[viewProfileTarget.id] : viewProfileTarget.alias);
+    return {
+      ...viewProfileTarget,
+      alias: latestAlias || undefined
+    };
+  }, [viewProfileTarget, myAlias, identitiesMap]);
+
   // Filter transmissions berdasarkan kata kunci / search
   const filteredTransmissions = searchQuery.trim()
-    ? transmissions.filter(tx => {
+    ? syncedTransmissions.filter(tx => {
         const q = searchQuery.toLowerCase().trim();
         return (
           tx.content.toLowerCase().includes(q) ||
@@ -479,12 +576,12 @@ export const Frequency: React.FC = () => {
           (tx.tag && tx.tag.toLowerCase().includes(q))
         );
       })
-    : transmissions;
+    : syncedTransmissions;
 
   // Dynamic topic list & statistik dihitung murni dari transmisi aktif di database
   const dynamicTopicStats = React.useMemo(() => {
     const counts: Record<string, number> = {};
-    transmissions.forEach((tx) => {
+    syncedTransmissions.forEach((tx) => {
       if (tx.tag) {
         const clean = tx.tag.replace(/^#+/, '').trim().toLowerCase();
         if (clean) {
@@ -495,7 +592,7 @@ export const Frequency: React.FC = () => {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
-  }, [transmissions]);
+  }, [syncedTransmissions]);
 
   return (
     <div className="pb-24 max-w-xl mx-auto px-0 relative">
@@ -655,14 +752,14 @@ export const Frequency: React.FC = () => {
       )}
 
       {/* 5. FULL-PAGE PROFIL SINYAL & ARSIP TRANSMISI */}
-      {viewProfileTarget && (
+      {activeProfileTarget && (
         <div className="fixed inset-0 z-40 overflow-y-auto bg-background">
           <UserProfileView
-            targetUser={viewProfileTarget}
+            targetUser={activeProfileTarget}
             onClose={handleCloseModal}
             myId={myId}
             myAlias={myAlias}
-            allTransmissions={transmissions}
+            allTransmissions={syncedTransmissions}
             getAvatarInitials={getAvatarInitials}
             onUpdateAlias={handleUpdateAlias}
             onDeleteTransmission={handleDeleteMyTx}
@@ -682,9 +779,9 @@ export const Frequency: React.FC = () => {
       )}
 
       {/* 6. DEDICATED POST VIEW / MODAL POST MANDIRI (Stack di atas Profile jika dibuka dari profil) */}
-      {selectedTransmission && (
+      {activeSelectedTransmission && (
         <TransmissionDetailModal
-          transmission={selectedTransmission}
+          transmission={activeSelectedTransmission}
           onClose={handleCloseModal}
           myId={myId}
           myAlias={myAlias}
@@ -764,16 +861,32 @@ export const Frequency: React.FC = () => {
         onClose={handleCloseModal}
         myId={myId}
         myAlias={myAlias}
+        myPasskey={myPasskey}
         avatarInitials={getAvatarInitials(myId, myAlias)}
         onOpenProfile={handleMenuToProfile}
         onOpenInfo={handleMenuToInfo}
+        onOpenRecoveryModal={() => {
+          setIsMenuOpen(false);
+          setIsRecoveryModalOpen(true);
+        }}
+      />
+
+      {/* 9. MODAL KUNCI & PEMULIHAN AKUN */}
+      <IdentityRecoveryModal
+        isOpen={isRecoveryModalOpen}
+        onClose={() => setIsRecoveryModalOpen(false)}
+        myId={myId}
+        myPasskey={myPasskey}
+        myAlias={myAlias}
+        onIdentityRecovered={handleIdentityRecovered}
       />
 
       {/* 9. DRAWER SEARCH & EKSPLORASI TOPIK (Threads Style) */}
       <FrequencySearchDrawer
         isOpen={isSearchOpen}
         onClose={handleCloseModal}
-        transmissions={transmissions}
+        transmissions={syncedTransmissions}
+        identitiesMap={identitiesMap}
         currentSearchQuery={searchQuery}
         onSelectTopic={(topic) => setSearchQuery(topic)}
         onSelectAuthor={(authorId, authorAlias) => {

@@ -115,14 +115,15 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
 
         {/* Kolom Kanan: Header, Isi Cerita, Aksi */}
         <div className="flex-1 min-w-0 pt-0.5 space-y-2">
-          {/* Header Baris Tunggal: ID/Alias > Topik di kiri, Waktu di kanan */}
+          {/* Header Baris: ID/Alias + ID Handle > Topik di kiri, Waktu di kanan */}
           <div className="flex items-center justify-between text-xs font-mono">
             <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-               <span
+              {/* Jika punya alias: Tampilkan Nama Alias saja, jika tidak: tampilkan ID */}
+              <span
                 onClick={handleAuthorClick}
-                className="font-semibold text-text-primary truncate hover:underline cursor-pointer"
+                className="font-bold text-text-primary truncate hover:underline cursor-pointer"
               >
-                {primaryId}
+                {tx.authorAlias || tx.authorId}
               </span>
 
               {/* Tag Topik Tepat Pas di Samping ID/Alias > */}

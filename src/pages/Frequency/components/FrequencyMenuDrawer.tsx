@@ -1,14 +1,16 @@
 import React, { useRef } from 'react';
-import { X, User, Info, Radio, ChevronRight } from 'lucide-react';
+import { X, User, Info, Radio, ChevronRight, Key } from 'lucide-react';
 
 interface FrequencyMenuDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   myId: string;
   myAlias?: string;
+  myPasskey?: string;
   avatarInitials: string;
   onOpenProfile: () => void;
   onOpenInfo: () => void;
+  onOpenRecoveryModal: () => void;
 }
 
 export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
@@ -16,9 +18,11 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
   onClose,
   myId,
   myAlias,
+  myPasskey,
   avatarInitials,
   onOpenProfile,
   onOpenInfo,
+  onOpenRecoveryModal,
 }) => {
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
@@ -125,7 +129,31 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
             <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary group-hover:translate-x-0.5 transition-all" />
           </button>
 
-          {/* 2. Menu Tentang Frekuensi */}
+          {/* 2. Menu Kunci & Pemulihan Akun */}
+          <button
+            onClick={onOpenRecoveryModal}
+            className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 border border-border bg-background text-text-secondary group-hover:text-accent group-hover:border-accent transition-colors">
+                <Key size={16} />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
+                  <span>Kunci & Pemulihan</span>
+                  <span className="text-[9px] font-mono px-1 py-0.2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-semibold uppercase">
+                    Aktif
+                  </span>
+                </div>
+                <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
+                  Salin kunci rahasia atau pulihkan ID lama
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary group-hover:translate-x-0.5 transition-all" />
+          </button>
+
+          {/* 3. Menu Tentang Frekuensi */}
           <button
             onClick={onOpenInfo}
             className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
