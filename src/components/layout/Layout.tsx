@@ -33,7 +33,7 @@ export const Layout: React.FC = () => {
         <h1 className="text-4xl font-display tracking-widest uppercase mb-12">Sorside</h1>
         <nav className="flex-1">
           <ul className="space-y-6">
-            {['Home', 'Discography', 'The Side', 'Contact', 'About'].map((label) => {
+            {['Home', 'Discography', 'The Side', 'Frequency', 'About'].map((label) => {
               const path = label === 'Home' ? '/' : `/${label.toLowerCase().replace(' ', '-')}`;
               return (
                 <li key={path}>

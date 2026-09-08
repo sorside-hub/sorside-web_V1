@@ -18,7 +18,6 @@ export const contactData = {
   platforms: [
     { id: 'youtube', name: 'YouTube', url: '#', icon: IconYoutube },
     { id: 'spotify', name: 'Spotify', url: '#', icon: IconSpotify },
-    { id: 'apple-music', name: 'Apple Music', url: '#', icon: IconAppleMusic },
-    { id: 'soundcloud', name: 'SoundCloud', url: '#', icon: IconSoundcloud }
+    { id: 'apple-music', name: 'Apple Music', url: '#', icon: IconAppleMusic }
   ]
 };

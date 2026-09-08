@@ -10,7 +10,7 @@ import { Discography, ReleaseDetail } from './pages/Discography';
 import { TheSide } from './pages/TheSide';
 import { ArticleDetail } from './pages/TheSide/ArticleDetail';
 import { About } from './pages/About';
-import { Contact } from './pages/Contact';
+import { Frequency } from './pages/Frequency';
 import { AudioPlayerProvider } from './context/AudioPlayerContext';
 
 export default function App() {
@@ -23,8 +23,8 @@ export default function App() {
           <Route path="discography/:slug" element={<ReleaseDetail />} />
           <Route path="the-side" element={<TheSide />} />
           <Route path="the-side/:slug" element={<ArticleDetail />} />
+          <Route path="frequency" element={<Frequency />} />
           <Route path="about" element={<About />} />
-          <Route path="contact" element={<Contact />} />
         </Route>
       </Routes>
     </AudioPlayerProvider>

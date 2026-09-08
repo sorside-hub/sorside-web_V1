@@ -1,13 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Disc, BookOpen, Mail } from 'lucide-react';
+import { Home, Disc, BookOpen, Radio } from 'lucide-react';
 import { SSLogo } from '../icons/SSLogo';
 
 const navItems = [
   { path: '/', label: 'Home', icon: Home },
   { path: '/discography', label: 'Discography', icon: Disc },
   { path: '/the-side', label: 'The Side', icon: BookOpen },
-  { path: '/contact', label: 'Contact', icon: Mail },
+  { path: '/frequency', label: 'Frequency', icon: Radio },
   { path: '/about', label: 'About', icon: SSLogo },
 ];
 

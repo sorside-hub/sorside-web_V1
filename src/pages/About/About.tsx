@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Mail } from 'lucide-react';
 import { getCachedArticles, subscribeToArticles, revalidateArticles } from '../../lib/articlesStore';
 import { getCachedReleases, subscribeToReleases, revalidateReleases } from '../../lib/discographyStore';
 import { getCachedGlossary, subscribeToGlossary, revalidateGlossary } from '../../lib/glossaryStore';
@@ -6,9 +7,14 @@ import { Article } from '../../types';
 import { Release } from '../../types/discography';
 import { GlossaryItem } from '../../types/glossary';
 import { AboutSqlSetup } from './components/AboutSqlSetup';
-import { Settings } from 'lucide-react';
+import { contactData } from '../../data/contact';
+import { SocialLink } from '../Contact/components/SocialLink';
+import { PlatformLink } from '../Contact/components/PlatformLink';
+import { ContactModal } from './components/ContactModal';
+import { MessageSquare } from 'lucide-react';
 
 export const About: React.FC = () => {
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [articles, setArticles] = useState<Article[]>(getCachedArticles());
   const [releases, setReleases] = useState<Release[]>(getCachedReleases());
   const [glossary, setGlossary] = useState<GlossaryItem[]>(getCachedGlossary());
@@ -189,7 +195,97 @@ export const About: React.FC = () => {
           </div>
         </div>
 
+        {/* 2. Contact & Connectivity */}
+        <div className="pt-8 space-y-8">
+          <div className="flex items-center gap-4">
+            <span className="h-[1px] flex-1 bg-border/60"></span>
+            <span className="font-mono text-[10px] text-text-secondary uppercase tracking-widest flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-accent rounded-full" />
+              CONNECTIVITY // REACH
+            </span>
+            <span className="h-[1px] flex-1 bg-border/60"></span>
+          </div>
+
+          <div className="space-y-8">
+            {/* Direct Transmission: Email & Direct Message Popup */}
+            <div className="border border-border bg-surface p-5 sm:p-6 transition-all duration-300 hover:border-text-secondary">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {/* Info Email Langsung */}
+                <div className="space-y-2">
+                  <p className="font-mono text-[10px] text-text-secondary uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-accent/60 inline-block" />
+                    // Direct Transmission
+                  </p>
+                  <a 
+                    href={`mailto:${contactData.email}`}
+                    className="group flex items-center gap-3 transition-colors"
+                  >
+                    <div className="p-2 border border-border bg-background group-hover:border-accent group-hover:text-accent transition-colors">
+                      <Mail className="w-4 h-4 text-text-secondary group-hover:text-accent transition-colors" strokeWidth={1.5} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-mono text-sm tracking-wider text-text-primary group-hover:text-accent transition-colors">
+                        {contactData.email}
+                      </span>
+                      <span className="font-mono text-[10px] text-text-secondary tracking-widest uppercase">
+                        Buka aplikasi surel
+                      </span>
+                    </div>
+                  </a>
+                </div>
+
+                {/* Tombol Kirim Pesan Cepat (Pop-up Modal) */}
+                <div className="pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60">
+                  <button
+                    type="button"
+                    onClick={() => setIsContactOpen(true)}
+                    className="w-full sm:w-auto flex items-center justify-center gap-3 px-5 py-3 border border-accent/80 bg-background hover:bg-accent hover:text-background text-text-primary font-mono text-xs tracking-widest uppercase transition-all duration-200 group shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                  >
+                    <MessageSquare size={14} className="text-accent group-hover:text-background transition-colors" />
+                    <span>Kirim Pesan Langsung</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Socials & Listen - 2 Kolom Kanan & Kiri */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Kolom Kiri: Socials */}
+              <div className="border border-border bg-surface p-5 sm:p-6 transition-all duration-300 hover:border-text-secondary">
+                <p className="font-mono text-[10px] text-text-secondary uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-accent inline-block" />
+                  Socials
+                </p>
+                <div className="divide-y divide-border/40">
+                  {contactData.socials.map(social => (
+                    <SocialLink key={social.id} item={social} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Kolom Kanan: Listen */}
+              <div className="border border-border bg-surface p-5 sm:p-6 transition-all duration-300 hover:border-text-secondary">
+                <p className="font-mono text-[10px] text-text-secondary uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-accent inline-block" />
+                  Listen
+                </p>
+                <div className="divide-y divide-border/40">
+                  {contactData.platforms.map(platform => (
+                    <PlatformLink key={platform.id} item={platform} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
+
+      {/* Pop-up Modal Kirim Pesan Langsung */}
+      <ContactModal 
+        isOpen={isContactOpen} 
+        onClose={() => setIsContactOpen(false)} 
+      />
     </div>
   );
 };
