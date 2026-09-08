@@ -83,9 +83,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm('Hapus transmisi ini secara permanen?')) {
-      onDeleteTransmission(tx.id);
-    }
+    onDeleteTransmission(tx.id);
   };
 
   const cleanTopic = tx.tag ? tx.tag.replace(/^#+/, '') : '';
@@ -131,13 +129,15 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
               {cleanTopic && (
                 <div className="flex items-center gap-1.5 shrink-0">
                   <ChevronRight size={13} className="text-text-secondary/50 shrink-0" />
-                  <span
-                    onClick={(e) => handleTopicClick(e, cleanTopic)}
-                    className="text-text-secondary hover:underline cursor-pointer font-semibold text-xs"
-                    title={`Filter #${cleanTopic}`}
+                  <button
+                    type="button"
+                    onClick={(e) => handleTopicClick(e, cleanTopic.toLowerCase())}
+                    className="hover:underline cursor-pointer font-mono font-semibold text-xs flex items-center gap-0.5"
+                    title={`Filter #${cleanTopic.toLowerCase()}`}
                   >
-                    #{cleanTopic}
-                  </span>
+                    <span className="text-accent font-bold">#</span>
+                    <span className="text-text-primary lowercase">{cleanTopic.toLowerCase()}</span>
+                  </button>
                 </div>
               )}
             </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, X, Search, RotateCcw } from 'lucide-react';
 import { FrequencyHeader } from './components/FrequencyHeader';
 import { FrequencyMenuDrawer } from './components/FrequencyMenuDrawer';
+import { FrequencySearchDrawer } from './components/FrequencySearchDrawer';
 import { TransmissionComposerModal } from './components/TransmissionComposerModal';
 import { TransmissionItem, Transmission, Reply } from './components/TransmissionItem';
 import { TransmissionDetailModal } from './components/TransmissionDetailModal';
@@ -13,65 +14,35 @@ import {
   deleteTransmissionFromFirestore 
 } from '../../services/frequencyService';
 
-const INITIAL_TRANSMISSIONS: Transmission[] = [
-  {
-    id: 'tx-1',
-    authorId: 'ss-840',
-    authorAlias: 'Pengelana Malam',
-    tag: 'HENING',
-    content: 'Kadang jam segini lagu-lagu sorside jadi terasa beda banget di telinga. Ada keheningan yang gak bisa dijelasin kata-kata, cuma bisa dinikmati sendiri tanpa perlu pura-pura tegar.',
-    timestamp: '14m',
-    replies: [
-      {
-        id: 'rep-1-1',
-        authorId: 'ss-109',
-        content: 'Bener banget bro, terutama trek nomor 2. Suasana kamar langsung hening total.',
-        timestamp: '9m'
-      },
-      {
-        id: 'rep-1-2',
-        authorId: 'ss-840',
-        authorAlias: 'Pengelana Malam',
-        content: 'Iya, distorsi gitarnya seperti bicara langsung ke pikiran yang lagi kusut.',
-        timestamp: '4m',
-        replyToId: 'ss-109',
-        replyToName: 'ss-109'
-      }
-    ]
-  },
-  {
-    id: 'tx-2',
-    authorId: 'ss-312',
-    tag: 'LELAH',
-    content: 'Sisi yang gak pernah terlihat: gue selalu keliatan paling ceria di kantor, tapi tiap pulang ke kosan rasanya kosong banget. Ruang ini kerasa nyaman karena gak ada tuntutan buat terlihat bahagia.',
-    timestamp: '1j',
-    replies: [
-      {
-        id: 'rep-2-1',
-        authorId: 'ss-001',
-        authorAlias: 'Sorside',
-        content: 'Terima kasih sudah membagi bebanmu di sini. Istirahat yang cukup malam ini.',
-        timestamp: '48m'
-      }
-    ]
-  },
-  {
-    id: 'tx-3',
-    authorId: 'ss-774',
-    authorAlias: 'Kamar Lantai 2',
-    tag: 'NOSTALGIA',
-    content: 'Suara distorsi analognya ngingetin gue sama rekaman pita kaset tua bapak gue di tahun 2000-an awal. Raw, jujur, dan apa adanya.',
-    timestamp: '3j',
-    replies: []
-  }
-];
-
-const VIBE_OPTIONS = ['HENING', 'LELAH', 'NOSTALGIA', 'GELISAH', 'HARAP'];
-
 export const Frequency: React.FC = () => {
-  // User Identity State (Stored in LocalStorage)
-  const [myId, setMyId] = useState('ss-582');
-  const [myAlias, setMyAlias] = useState('');
+  // User Identity State (Stored in LocalStorage, lazily initialized to prevent id mismatches)
+  const [myId, setMyId] = useState(() => {
+    try {
+      let id = localStorage.getItem('sorside_freq_id');
+      if (!id) {
+        const randomNum = Math.floor(100 + Math.random() * 900);
+        id = `ss-${randomNum}`;
+        localStorage.setItem('sorside_freq_id', id);
+      }
+      return id;
+    } catch {
+      return 'ss-582';
+    }
+  });
+  const [myAlias, setMyAlias] = useState(() => {
+    try {
+      return localStorage.getItem('sorside_freq_alias') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  // Feed & Loading State (Tanpa template fallback dummy)
+  const [transmissions, setTransmissions] = useState<Transmission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // In-app Delete Confirmation State (Menggantikan window.confirm yang diblokir iframe)
+  const [txToDelete, setTxToDelete] = useState<string | null>(null);
 
   // Modals state
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -102,6 +73,11 @@ export const Frequency: React.FC = () => {
   const [showScrollFAB, setShowScrollFAB] = useState(false);
 
   // Unified Modal History Controllers
+  const openSearch = () => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setIsSearchOpen(true);
+  };
+
   const openMenu = () => {
     window.history.pushState({ sorsideModal: true }, '');
     setIsMenuOpen(true);
@@ -154,6 +130,9 @@ export const Frequency: React.FC = () => {
   const isComposerOpenRef = useRef(isComposerOpen);
   isComposerOpenRef.current = isComposerOpen;
 
+  const isSearchOpenRef = useRef(isSearchOpen);
+  isSearchOpenRef.current = isSearchOpen;
+
   const selectedTxRef = useRef(selectedTransmission);
   selectedTxRef.current = selectedTransmission;
 
@@ -172,6 +151,8 @@ export const Frequency: React.FC = () => {
         setIsTopicModalOpen(false);
       } else if (isComposerOpenRef.current) {
         setIsComposerOpen(false);
+      } else if (isSearchOpenRef.current) {
+        setIsSearchOpen(false);
       } else if (selectedTxRef.current) {
         setSelectedTransmission(null);
         setInitialReplyTarget(null);
@@ -202,6 +183,84 @@ export const Frequency: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Edge Swipe & Gesture Navigation Support (Disesuaikan agar tidak bentrok dengan gesture back OS)
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isEdgeTouch = false;
+    let touchType: 'none' | 'edge-left' | 'edge-right' = 'none';
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      
+      // Jangan trigger jika sedang ada modal fokus atau popup bertumpuk
+      if (
+        isComposerOpenRef.current || 
+        isTopicModalOpenRef.current || 
+        selectedTxRef.current || 
+        showInfoModalRef.current
+      ) {
+        touchType = 'none';
+        return;
+      }
+
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      const screenWidth = window.innerWidth;
+      
+      // Zona aman gesture: kita beri jeda 20px dari pinggir fisik agar tidak memicu gesture Back OS hp,
+      // dan menangkap gesture di zona 20px - 70px dari pinggir kiri/kanan.
+      const minDeadzone = 20; 
+      const maxZone = Math.min(80, screenWidth * 0.22);
+
+      // Cek apakah sentuhan dimulai dari area zona aman saat drawer tertutup
+      if (!isSearchOpenRef.current && !isMenuOpenRef.current && !viewProfileTargetRef.current) {
+        if (touchStartX >= minDeadzone && touchStartX <= maxZone) {
+          touchType = 'edge-left';
+          isEdgeTouch = true;
+        } else if (touchStartX <= (screenWidth - minDeadzone) && touchStartX >= (screenWidth - maxZone)) {
+          touchType = 'edge-right';
+          isEdgeTouch = true;
+        } else {
+          touchType = 'none';
+          isEdgeTouch = false;
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchType === 'none' && !isEdgeTouch) return;
+      if (e.changedTouches.length !== 1) return;
+
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+
+      // Pastikan gerakan dominan horizontal (bukan scrolling vertikal membaca feed)
+      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && Math.abs(deltaX) > 45) {
+        if (touchType === 'edge-left' && deltaX > 0) {
+          // Usap ke kanan dari zona kiri -> Buka Drawer Search / Eksplorasi
+          openSearch();
+        } else if (touchType === 'edge-right' && deltaX < 0) {
+          // Usap ke kiri dari zona kanan -> Buka Menu Sinyal
+          openMenu();
+        }
+      }
+
+      touchType = 'none';
+      isEdgeTouch = false;
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
+
   const handleDraftChange = (text: string) => {
     setDraftContent(text);
     try {
@@ -212,12 +271,14 @@ export const Frequency: React.FC = () => {
   };
 
   const handlePostTransmission = async (content: string, tag: string) => {
+    const cleanTag = tag ? tag.trim().replace(/^#+/, '').replace(/\s+/g, '-').toLowerCase() : '';
+
     const newTx: Transmission = {
       id: `tx-${Date.now()}`,
       authorId: myId,
       authorAlias: myAlias || undefined,
       content,
-      tag,
+      tag: cleanTag || undefined,
       timestamp: 'Baru saja',
       replies: []
     };
@@ -242,22 +303,24 @@ export const Frequency: React.FC = () => {
     }
   };
 
-  // Feed & Replies State
-  const [transmissions, setTransmissions] = useState<Transmission[]>(INITIAL_TRANSMISSIONS);
-
   // Sync dengan Firestore secara Real-Time
   useEffect(() => {
-    const unsubscribe = subscribeTransmissions((remoteTransmissions) => {
-      if (remoteTransmissions && remoteTransmissions.length > 0) {
-        setTransmissions(remoteTransmissions);
+    const unsubscribe = subscribeTransmissions(
+      (remoteTransmissions) => {
+        setTransmissions(remoteTransmissions || []);
+        setIsLoading(false);
         // Jika ada detail modal yang terbuka, sinkronkan juga datanya secara live
         setSelectedTransmission(prev => {
           if (!prev) return null;
-          const updated = remoteTransmissions.find(t => t.id === prev.id);
+          const updated = (remoteTransmissions || []).find(t => t.id === prev.id);
           return updated || prev;
         });
+      },
+      (error) => {
+        console.warn('[Frequency] Gagal memuat data dari Firestore:', error);
+        setIsLoading(false);
       }
-    });
+    );
 
     return () => {
       unsubscribe();
@@ -363,7 +426,16 @@ export const Frequency: React.FC = () => {
     }
   };
 
-  const handleDeleteMyTx = async (id: string) => {
+  const handleDeleteMyTx = (id: string) => {
+    setTxToDelete(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!txToDelete) return;
+    const id = txToDelete;
+    setTxToDelete(null);
+
+    // Optimistic UI update
     setTransmissions(prev => prev.filter(t => t.id !== id));
     if (selectedTransmission?.id === id) {
       setSelectedTransmission(null);
@@ -409,91 +481,81 @@ export const Frequency: React.FC = () => {
       })
     : transmissions;
 
-  // Dynamic topic list dari semua transmisi yang ada
-  const dynamicTagOptions = Array.from(
-    new Set([
-      ...VIBE_OPTIONS,
-      ...transmissions.map(tx => tx.tag).filter(Boolean).map(t => t!.replace(/^#+/, ''))
-    ])
-  );
+  // Dynamic topic list & statistik dihitung murni dari transmisi aktif di database
+  const dynamicTopicStats = React.useMemo(() => {
+    const counts: Record<string, number> = {};
+    transmissions.forEach((tx) => {
+      if (tx.tag) {
+        const clean = tx.tag.replace(/^#+/, '').trim().toLowerCase();
+        if (clean) {
+          counts[clean] = (counts[clean] || 0) + 1;
+        }
+      }
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [transmissions]);
 
   return (
     <div className="pb-24 max-w-xl mx-auto px-0 relative">
       
       {/* 1. COMPACT STICKY HEADER */}
       <FrequencyHeader 
-        onToggleSearch={() => {
-          setIsSearchOpen(prev => !prev);
-          if (isSearchOpen) {
-            setSearchQuery('');
-          }
-        }}
+        onToggleSearch={openSearch}
         isSearchOpen={isSearchOpen}
         onOpenMenu={openMenu}
       />
 
-      {/* SEARCH BAR (Muncul saat tombol Search di kiri header aktif) */}
-      {isSearchOpen && (
-        <div className="mb-4 pb-3 border-b border-border/70 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="relative flex items-center">
-            <Search size={15} className="absolute left-3 text-text-secondary/70 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari cerita, sinyal (ss-xxx), atau topik..."
-              className="w-full bg-surface/70 border border-border/80 pl-9 pr-9 py-2.5 font-mono text-xs text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent focus:bg-surface transition-all"
-              autoFocus
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 p-0.5 text-text-secondary hover:text-text-primary transition-colors"
-                title="Hapus pencarian"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-          {searchQuery.trim() && (
-            <div className="flex items-center justify-between font-mono text-[11px] text-text-secondary/70 mt-2 px-1">
-              <span>Menemukan {filteredTransmissions.length} sinyal</span>
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-accent hover:underline"
-              >
-                Bersihkan
-              </button>
+      {/* FILTER INDIKATOR AKTIF (Jika feed sedang terfilter oleh pencarian atau topik) */}
+      {searchQuery.trim() && (
+        <div className="mb-4 p-3 border border-border/80 bg-surface/50 flex items-center justify-between animate-in fade-in duration-150">
+          <div className="flex items-center gap-2 font-mono text-xs text-text-primary min-w-0 pr-2">
+            <span className="text-text-secondary shrink-0">Filter:</span>
+            <div className="font-mono font-bold truncate flex items-center gap-0.5">
+              {searchQuery.startsWith('#') ? (
+                <>
+                  <span className="text-accent font-bold">#</span>
+                  <span className="text-text-primary font-bold">{searchQuery.slice(1)}</span>
+                </>
+              ) : (
+                <span className="text-text-primary font-bold">&quot;{searchQuery}&quot;</span>
+              )}
             </div>
-          )}
+            <span className="text-text-secondary/70 text-[10px] shrink-0">
+              ({filteredTransmissions.length} sinyal)
+            </span>
+          </div>
+          <button
+            onClick={() => setSearchQuery('')}
+            className="font-mono text-xs text-text-secondary hover:text-text-primary hover:underline px-2 py-0.5 border border-border hover:border-text-primary shrink-0 transition-colors"
+          >
+            Reset
+          </button>
         </div>
       )}
 
-      {/* 2. COMPOSER TRIGGER BAR (Hanya tampilkan ID jika belum ada Alias) */}
-      <div 
-        onClick={openComposer}
-        className="pb-3.5 pt-0 mb-4 border-b border-border/70 cursor-pointer transition-colors flex items-start gap-3.5 select-none group hover:border-border"
-      >
-        <div className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center font-mono text-xs text-text-primary font-bold shrink-0 tracking-tighter group-hover:border-accent/80 transition-colors">
-          {getAvatarInitials(myId, myAlias)}
-        </div>
-
-        <div className="flex-1 min-w-0 flex flex-col justify-center pt-0.5">
-          <div className="flex items-center gap-1.5 font-mono text-xs text-text-primary font-semibold">
-            {/* Jika punya alias tampilkan nama alias saja, ID disembunyikan */}
-            <span>{myAlias || myId}</span>
+      {/* 2. COMPOSER TRIGGER BAR (Hanya tampil saat feed TIDAK sedang difilter) */}
+      {!searchQuery.trim() && (
+        <div 
+          onClick={openComposer}
+          className="pb-3.5 pt-0 mb-4 border-b border-border/70 cursor-pointer transition-colors flex items-center gap-3.5 select-none group hover:border-border"
+        >
+          <div className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center font-mono text-xs text-text-primary font-bold shrink-0 tracking-tighter group-hover:border-accent/80 transition-colors">
+            {getAvatarInitials(myId, myAlias)}
           </div>
-          <p className="text-sm font-sans text-text-secondary/60 group-hover:text-text-secondary transition-colors truncate mt-0.5">
-            {draftContent ? `Draft: ${draftContent}` : 'Mulai bercerita...'}
-          </p>
-        </div>
 
-        <div className="shrink-0 self-center">
-          <span className="font-mono text-[10px] text-text-secondary group-hover:text-accent border border-border/70 group-hover:border-accent/60 px-2 py-0.5 uppercase tracking-wider transition-colors">
-            Post
-          </span>
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5 font-mono text-xs text-text-primary font-semibold">
+              {/* Jika punya alias tampilkan nama alias saja, ID disembunyikan */}
+              <span>{myAlias || myId}</span>
+            </div>
+            <p className="text-sm font-sans text-text-secondary/60 group-hover:text-text-secondary transition-colors truncate mt-0.5">
+              {draftContent ? `Draft: ${draftContent}` : 'Mulai bercerita...'}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* MODAL FOKUS MENULIS */}
       <TransmissionComposerModal
@@ -506,7 +568,7 @@ export const Frequency: React.FC = () => {
         onDraftChange={handleDraftChange}
         selectedTag={selectedVibe}
         onTagChange={setSelectedVibe}
-        tagOptions={dynamicTagOptions}
+        tagOptions={dynamicTopicStats}
         avatarInitials={getAvatarInitials(myId, myAlias)}
         isTopicModalOpen={isTopicModalOpen}
         onOpenTopicModal={openTopicModal}
@@ -515,7 +577,26 @@ export const Frequency: React.FC = () => {
 
       {/* 3. FEED TRANSMISI (Klik card atau balas langsung buka modal mandiri) */}
       <div className="divide-y divide-border/60">
-        {filteredTransmissions.length === 0 ? (
+        {isLoading ? (
+          /* Subtle Minimalist Skeleton Loading */
+          <div className="divide-y divide-border/50 animate-pulse">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="py-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-surface/80 shrink-0 border border-border/60" />
+                  <div className="space-y-1.5 flex-1">
+                    <div className="h-3 w-28 bg-surface/90 rounded" />
+                    <div className="h-2.5 w-16 bg-surface/60 rounded" />
+                  </div>
+                </div>
+                <div className="space-y-2 pl-[52px]">
+                  <div className="h-3 w-full bg-surface/80 rounded" />
+                  <div className="h-3 w-4/5 bg-surface/60 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredTransmissions.length === 0 ? (
           <div className="py-16 text-center text-text-secondary font-mono text-xs uppercase tracking-widest space-y-2">
             {searchQuery.trim() ? (
               <>
@@ -560,15 +641,15 @@ export const Frequency: React.FC = () => {
 
       {/* 4. FLOATING ACTION BUTTON (+) CERDAS */}
       {showScrollFAB && (
-        <div className="fixed bottom-6 right-6 sm:right-10 z-40 animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed bottom-20 right-5 sm:bottom-10 sm:right-10 z-40 animate-in fade-in zoom-in-95 duration-200">
           <button
             type="button"
             onClick={openComposer}
-            className="w-13 h-13 p-3.5 bg-text-primary text-background rounded-full shadow-2xl hover:bg-accent hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background/20"
+            className="w-12 h-12 sm:w-13 sm:h-13 bg-text-primary text-background rounded-full shadow-2xl hover:opacity-90 hover:scale-105 active:scale-95 transition-all flex items-center justify-center border border-border/30"
             aria-label="Pancarkan Sinyal Baru"
             title="Pancarkan Sinyal Baru"
           >
-            <Plus size={24} strokeWidth={2.5} />
+            <Plus size={22} strokeWidth={2.2} />
           </button>
         </div>
       )}
@@ -687,6 +768,65 @@ export const Frequency: React.FC = () => {
         onOpenProfile={handleMenuToProfile}
         onOpenInfo={handleMenuToInfo}
       />
+
+      {/* 9. DRAWER SEARCH & EKSPLORASI TOPIK (Threads Style) */}
+      <FrequencySearchDrawer
+        isOpen={isSearchOpen}
+        onClose={handleCloseModal}
+        transmissions={transmissions}
+        currentSearchQuery={searchQuery}
+        onSelectTopic={(topic) => setSearchQuery(topic)}
+        onSelectAuthor={(authorId, authorAlias) => {
+          openProfile({
+            id: authorId,
+            alias: authorAlias,
+            isMe: authorId === myId,
+          });
+        }}
+        onSelectTransmission={(tx) => {
+          openDetail(tx);
+        }}
+        onApplySearchQuery={(query) => setSearchQuery(query)}
+      />
+
+      {/* 10. MODAL KONFIRMASI HAPUS IN-APP (Aman dari pembatasan iframe / browser) */}
+      {txToDelete && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setTxToDelete(null)}
+        >
+          <div 
+            className="w-full max-w-sm border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-1.5">
+              <h4 className="font-mono text-sm font-bold text-text-primary uppercase tracking-wider">
+                Hapus Transmisi?
+              </h4>
+              <p className="font-sans text-xs text-text-secondary leading-relaxed">
+                Cerita ini akan dihapus secara permanen dari gelombang Frequency dan database. Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border/50">
+              <button
+                type="button"
+                onClick={() => setTxToDelete(null)}
+                className="px-3.5 py-1.5 border border-border hover:border-text-primary text-text-secondary hover:text-text-primary font-mono text-xs uppercase tracking-wider transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider font-semibold transition-colors"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

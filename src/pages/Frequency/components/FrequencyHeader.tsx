@@ -23,8 +23,8 @@ export const FrequencyHeader: React.FC<FrequencyHeaderProps> = ({
               ? 'border-accent bg-accent/10 text-accent' 
               : 'border-border text-text-secondary hover:text-accent hover:border-accent bg-surface/80'
           }`}
-          title={isSearchOpen ? 'Tutup Pencarian' : 'Cari Transmisi / Topik'}
-          aria-label={isSearchOpen ? 'Tutup Pencarian' : 'Cari Transmisi atau Topik'}
+          title={isSearchOpen ? 'Tutup Pencarian' : 'Cari Transmisi / Topic'}
+          aria-label={isSearchOpen ? 'Tutup Pencarian' : 'Cari Transmisi atau Topic'}
         >
           {isSearchOpen ? <X size={16} /> : <Search size={16} />}
         </button>

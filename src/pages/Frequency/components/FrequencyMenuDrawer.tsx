@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { X, User, Info, Radio, ChevronRight } from 'lucide-react';
 
 interface FrequencyMenuDrawerProps {
@@ -20,7 +20,29 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
   onOpenProfile,
   onOpenInfo,
 }) => {
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
+
   if (!isOpen) return null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+      const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+      // Usap ke kanan (->) pada drawer kanan untuk menutupnya
+      if (deltaX > 60 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+        onClose();
+      }
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-200">
@@ -33,6 +55,8 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
 
       {/* Slide-over Drawer Panel */}
       <aside 
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         className="relative w-full max-w-xs sm:max-w-sm h-full bg-surface/95 border-l border-border shadow-2xl flex flex-col z-10 animate-in slide-in-from-right duration-250 ease-out"
         role="dialog"
         aria-modal="true"

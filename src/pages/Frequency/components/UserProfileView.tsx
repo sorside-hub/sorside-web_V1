@@ -40,6 +40,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const [activeTab, setActiveTab] = useState<'transmissions' | 'comments'>('transmissions');
   const [isEditingAlias, setIsEditingAlias] = useState(false);
   const [editAliasVal, setEditAliasVal] = useState(targetUser.alias || '');
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
 
   // Scroll to top saat user target berubah
   useEffect(() => {
@@ -50,6 +52,25 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   useEffect(() => {
     setEditAliasVal(targetUser.alias || '');
   }, [targetUser.alias]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+      const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+      // Edge swipe dari tepi kiri (X <= 45px) ke kanan untuk kembali (Back)
+      if (touchStartXRef.current <= 45 && deltaX > 60 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+        handleBack();
+      }
+    }
+  };
 
   const handleBack = () => {
     onClose();
@@ -109,7 +130,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const firstSignalText = getFirstSignalDate();
 
   return (
-    <div className="min-h-screen bg-background text-text-primary pb-24 animate-in fade-in duration-150">
+    <div 
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="min-h-screen bg-background text-text-primary pb-24 animate-in fade-in duration-150"
+    >
       {/* 1. TOP BAR NAVIGASI (Sticky Minimalis) */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border/80 px-4 py-3 mb-6">
         <div className="max-w-xl mx-auto relative flex items-center justify-between min-h-[40px]">
@@ -132,11 +157,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           {targetUser.isMe ? (
             <button
               onClick={onOpenComposer}
-              className="w-10 h-10 flex items-center justify-center rounded-full border border-border/80 hover:border-text-primary text-text-secondary hover:text-text-primary transition-colors z-10"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-text-primary text-background shadow-md hover:opacity-90 hover:scale-105 active:scale-95 transition-all z-10 border border-border/30"
               aria-label="Pancarkan Sinyal Baru"
               title="Pancarkan Sinyal Baru"
             >
-              <Plus size={18} />
+              <Plus size={18} strokeWidth={2.2} />
             </button>
           ) : (
             <div className="w-10 h-10" />

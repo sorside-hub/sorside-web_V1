@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { X, Send, ChevronRight, Plus, Hash, Search } from 'lucide-react';
-import { TopicSearchModal } from './TopicSearchModal';
+import React, { useEffect, useRef } from 'react';
+import { X, Send, ChevronRight, Plus } from 'lucide-react';
+import { TopicSearchModal, TopicItem } from './TopicSearchModal';
 
 interface TransmissionComposerModalProps {
   isOpen: boolean;
@@ -12,7 +12,7 @@ interface TransmissionComposerModalProps {
   onDraftChange: (content: string) => void;
   selectedTag: string;
   onTagChange: (tag: string) => void;
-  tagOptions: string[];
+  tagOptions: (string | TopicItem)[];
   avatarInitials?: string;
   isTopicModalOpen: boolean;
   onOpenTopicModal: () => void;
@@ -113,14 +113,15 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
 
               {/* Tombol Pilih / Tampil Topik */}
               {selectedTag ? (
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
                     onClick={onOpenTopicModal}
-                    className="font-mono text-xs text-text-secondary hover:underline font-semibold"
+                    className="font-mono text-xs hover:underline font-semibold flex items-center gap-0.5"
                     title="Ganti topic"
                   >
-                    <span>#{selectedTag.replace(/^#+/, '')}</span>
+                    <span className="text-accent font-bold">#</span>
+                    <span className="text-text-primary lowercase">{selectedTag.replace(/^#+/, '').toLowerCase()}</span>
                   </button>
                   <button
                     type="button"

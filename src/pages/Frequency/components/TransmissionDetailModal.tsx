@@ -29,6 +29,8 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
   const [targetReply, setTargetReply] = useState<{ id: string; name: string } | null>(initialReplyTarget);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
 
   // Sync initial target jika berubah
   useEffect(() => {
@@ -52,6 +54,25 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
 
   const handleBack = () => {
     onClose();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.changedTouches.length === 1) {
+      const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+      const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+      // Edge swipe dari tepi kiri (X <= 45px) ke kanan untuk kembali (Back)
+      if (touchStartXRef.current <= 45 && deltaX > 60 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+        handleBack();
+      }
+    }
   };
 
   const handleSetReplyTo = (replyAuthorId: string, replyAuthorAlias?: string) => {
@@ -80,7 +101,11 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background overflow-y-auto pb-28 animate-in fade-in duration-150">
+    <div 
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className="fixed inset-0 z-50 bg-background overflow-y-auto pb-28 animate-in fade-in duration-150"
+    >
       {/* 1. TOP NAV BAR (Sticky Ala Sosmed Modern) */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border/80 px-4 py-3 mb-4">
         <div className="max-w-xl mx-auto relative flex items-center justify-between min-h-[40px]">
@@ -132,8 +157,9 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                 {tx.tag && (
                   <div className="flex items-center gap-1.5 font-mono text-xs">
                     <ChevronRight size={13} className="text-text-secondary/50 shrink-0" />
-                    <span className="text-text-secondary font-semibold">
-                      #{tx.tag.replace(/^#+/, '')}
+                    <span className="font-semibold flex items-center gap-0.5">
+                      <span className="text-accent font-bold">#</span>
+                      <span className="text-text-primary lowercase">{tx.tag.replace(/^#+/, '').toLowerCase()}</span>
                     </span>
                   </div>
                 )}
@@ -158,11 +184,9 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
 
             {isMyPost && (
               <button
+                type="button"
                 onClick={() => {
-                  if (confirm('Hapus transmisi ini?')) {
-                    onDeleteTransmission(tx.id);
-                    onClose();
-                  }
+                  onDeleteTransmission(tx.id);
                 }}
                 className="text-text-secondary hover:text-red-400 flex items-center gap-1 transition-colors p-1"
               >
