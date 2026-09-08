@@ -8,7 +8,7 @@ interface TransmissionComposerModalProps {
   myId: string;
   myAlias?: string;
   draftContent: string;
-  onDraftChange: (text: string) => void;
+  onDraftChange: (content: string) => void;
   selectedTag: string;
   onTagChange: (tag: string) => void;
   tagOptions: string[];
@@ -26,15 +26,15 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
   selectedTag,
   onTagChange,
   tagOptions,
-  avatarInitials
+  avatarInitials,
 }) => {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Dukungan tombol Back browser/HP (history popstate)
+  // Fokus otomatis dan dukungan popstate (tombol Back HP / Browser)
   useEffect(() => {
     if (!isOpen) return;
 
-    // Push state saat modal terbuka
+    // Tambahkan state ke history agar tombol Back menutup modal, bukan keluar dari web
     window.history.pushState({ composerOpen: true }, '');
 
     const handlePopState = () => {
@@ -43,10 +43,13 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
 
     window.addEventListener('popstate', handlePopState);
 
-    // Auto-focus instan tanpa animasi delay
+    // Auto fokus textarea
     const timer = setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
+        // Taruh kursor di ujung teks draft
+        const len = textareaRef.current.value.length;
+        textareaRef.current.setSelectionRange(len, len);
       }
     }, 50);
 
@@ -117,63 +120,57 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
 
         {/* IDENTITY & CONTENT AREA */}
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
-          {/* Identitas Penulis */}
+          {/* Identitas Penulis: Sembunyikan ID jika punya Alias, tanpa badge anonim */}
           <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
             <div className="w-8 h-8 rounded-full border border-border bg-surface flex items-center justify-center font-mono text-[11px] text-text-primary font-bold tracking-tighter">
               {avatarInitials || (myAlias ? myAlias[0].toUpperCase() : myId.slice(3))}
             </div>
-            <div className="flex items-baseline gap-1.5 font-mono text-xs">
+            <div className="flex items-baseline font-mono text-xs">
               <span className="font-semibold text-text-primary">
                 {myAlias || myId}
-              </span>
-              {myAlias && (
-                <span className="text-[10px] text-text-secondary">
-                  [{myId}]
-                </span>
-              )}
-              <span className="text-[9px] text-accent px-1 border border-accent/60 uppercase ml-1">
-                Anonim
               </span>
             </div>
           </div>
 
-          {/* Text Area Menulis Zen */}
+          {/* Area Teks Utama: Fokus dan Nyaman Tanpa Batas Kotak */}
           <textarea
             ref={textareaRef}
             value={draftContent}
             onChange={(e) => onDraftChange(e.target.value)}
-            placeholder="Mulai bercerita tentang sisi yang belum pernah terlihat..."
-            maxLength={500}
-            className="w-full h-64 sm:h-72 bg-transparent text-base font-sans text-text-primary placeholder:text-text-secondary/40 focus:outline-none resize-none leading-relaxed"
+            placeholder="Tuliskan apa yang sedang melintas di pikiranmu... tanpa jejak identitas, tanpa penghakiman."
+            rows={7}
+            maxLength={1000}
+            className="w-full bg-transparent font-sans text-base text-text-primary placeholder:text-text-secondary/40 focus:outline-none resize-none leading-relaxed"
           />
         </div>
 
-        {/* BOTTOM TOOLS BAR */}
-        <div className="border-t border-border/80 p-4 shrink-0 bg-surface/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Tag Suasana (Vibe) */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-mono text-text-secondary uppercase mr-1">
-              Vibe:
+        {/* BOTTOM CONTROLS: PILIHAN VIBE TAG & COUNTER KARAKTER */}
+        <div className="border-t border-border/80 p-4 bg-surface/30 space-y-3 shrink-0">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">
+              Vibe Frekuensi:
             </span>
+            <span className="font-mono text-[11px] text-text-secondary">
+              {draftContent.length}/1000
+            </span>
+          </div>
+
+          {/* Pilihan Tag Frekuensi */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             {tagOptions.map((tag) => (
               <button
                 key={tag}
                 type="button"
                 onClick={() => onTagChange(tag)}
-                className={`text-[10px] font-mono px-2 py-0.5 uppercase tracking-wider transition-colors border ${
+                className={`px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider border transition-all ${
                   selectedTag === tag
-                    ? 'border-accent text-accent font-semibold bg-accent/10'
-                    : 'border-border/60 text-text-secondary hover:text-text-primary'
+                    ? 'border-accent bg-accent text-background font-bold'
+                    : 'border-border/70 text-text-secondary hover:border-border hover:text-text-primary bg-surface/40'
                 }`}
               >
                 {tag}
               </button>
             ))}
-          </div>
-
-          {/* Karakter Counter */}
-          <div className="text-right font-mono text-[10px] text-text-secondary/70">
-            {draftContent.length}/500 karakter
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, ChevronDown, ChevronUp, Trash2, X } from 'lucide-react';
+import { MessageSquare, Trash2 } from 'lucide-react';
 
 export interface Reply {
   id: string;
@@ -7,6 +7,9 @@ export interface Reply {
   authorAlias?: string;
   content: string;
   timestamp: string;
+  createdAt?: any;
+  replyToId?: string;
+  replyToName?: string;
 }
 
 export interface Transmission {
@@ -16,6 +19,7 @@ export interface Transmission {
   content: string;
   tag?: string;
   timestamp: string;
+  createdAt?: any;
   replies: Reply[];
 }
 
@@ -24,15 +28,11 @@ interface TransmissionItemProps {
   myId: string;
   myAlias?: string;
   getAvatarInitials: (id: string, alias?: string) => string;
-  isThreadOpen: boolean;
-  onToggleThread: (id: string) => void;
-  isReplying: boolean;
-  onToggleReply: (id: string) => void;
-  replyInputValue: string;
-  onReplyInputChange: (id: string, text: string) => void;
-  onSubmitReply: (id: string, e: React.FormEvent) => void;
+  onOpenDetail?: (tx: Transmission) => void;
+  onQuickReply?: (tx: Transmission, targetReply?: Reply) => void;
   onDeleteTransmission: (id: string) => void;
   onAuthorClick?: (authorId: string, authorAlias?: string) => void;
+  isInsideDetail?: boolean;
 }
 
 export const TransmissionItem: React.FC<TransmissionItemProps> = ({
@@ -40,30 +40,57 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
   myId,
   myAlias,
   getAvatarInitials,
-  isThreadOpen,
-  onToggleThread,
-  isReplying,
-  onToggleReply,
-  replyInputValue,
-  onReplyInputChange,
-  onSubmitReply,
+  onOpenDetail,
+  onQuickReply,
   onDeleteTransmission,
   onAuthorClick,
+  isInsideDetail = false,
 }) => {
   const isMyPost = tx.authorId === myId;
-  // Cukup 1 identifier saja: jika ada alias gunakan alias, jika tidak gunakan authorId
+  // Jika user punya alias, tampilkan nama alias saja. Jika belum, tampilkan ID
   const primaryId = tx.authorAlias || tx.authorId;
 
-  const handleAuthorClick = () => {
+  const handleAuthorClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (onAuthorClick) {
       onAuthorClick(tx.authorId, tx.authorAlias);
     }
   };
 
+  const handleCardClick = () => {
+    if (!isInsideDetail && onOpenDetail) {
+      onOpenDetail(tx);
+    }
+  };
+
+  const handleReplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onQuickReply) {
+      onQuickReply(tx);
+    } else if (onOpenDetail) {
+      onOpenDetail(tx);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('Hapus transmisi ini secara permanen?')) {
+      onDeleteTransmission(tx.id);
+    }
+  };
+
   return (
-    <article id={`transmission-${tx.id}`} className="py-4 border-b border-border/70 transition-colors">
+    <article 
+      id={`transmission-${tx.id}`} 
+      onClick={handleCardClick}
+      className={`py-4 transition-colors ${
+        !isInsideDetail 
+          ? 'cursor-pointer hover:bg-surface/30 border-b border-border/70' 
+          : 'border-b border-border/80 pb-5'
+      }`}
+    >
       <div className="flex items-start gap-3.5">
-        {/* Kolom Kiri: Avatar (Ukuran & gaya sama persis dengan input bar w-10 h-10) + Benang Balasan */}
+        {/* Kolom Kiri: Avatar */}
         <div className="flex flex-col items-center shrink-0">
           <div
             onClick={handleAuthorClick}
@@ -75,16 +102,11 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
           >
             {getAvatarInitials(tx.authorId, tx.authorAlias)}
           </div>
-
-          {/* Garis benang vertikal ala Threads jika ada balasan dan terbuka */}
-          {tx.replies.length > 0 && isThreadOpen && (
-            <div className="w-[1.5px] bg-border/80 flex-1 my-2 rounded-full min-h-[36px]" />
-          )}
         </div>
 
-        {/* Kolom Kanan: Header (ID & Waktu sebaris), Isi Cerita (Warna ramah mata), Aksi */}
+        {/* Kolom Kanan: Header, Isi Cerita, Aksi */}
         <div className="flex-1 min-w-0 pt-0.5 space-y-2">
-          {/* Header Baris Tunggal: ID di kiri, Waktu di kanan */}
+          {/* Header Baris Tunggal: ID/Alias di kiri, Waktu di kanan */}
           <div className="flex items-center justify-between text-xs font-mono">
             <div 
               onClick={handleAuthorClick}
@@ -104,7 +126,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
               )}
             </div>
 
-            {/* Sisi Kanan: Vibe Tag (jika ada) & Waktu sebaris */}
+            {/* Sisi Kanan: Vibe Tag & Waktu Singkat */}
             <div className="flex items-center gap-2 text-[11px] font-mono text-text-secondary shrink-0">
               {tx.tag && (
                 <span className="border border-border/70 px-1.5 py-0.2 text-[10px] uppercase tracking-wider text-text-secondary/80">
@@ -115,34 +137,38 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
             </div>
           </div>
 
-          {/* Isi Pesan: Warna teks ramah mata seperti artikel (text-text-secondary yang nyaman dibaca) */}
-          <p className="font-sans text-sm sm:text-[15px] text-text-secondary leading-relaxed whitespace-pre-wrap">
+          {/* Isi Pesan */}
+          <p className={`font-sans text-text-secondary leading-relaxed whitespace-pre-wrap ${
+            isInsideDetail ? 'text-base text-text-primary' : 'text-sm sm:text-[15px]'
+          }`}>
             {tx.content}
           </p>
 
-          {/* Aksi Bawah: Balas & Buka Resonansi */}
+          {/* Aksi Bawah */}
           <div className="flex items-center gap-4 pt-1 text-xs font-mono text-text-secondary">
+            {/* Tombol Balas / Resonansi */}
             <button
-              onClick={() => onToggleReply(tx.id)}
-              className="flex items-center gap-1.5 hover:text-text-primary transition-colors uppercase tracking-wider text-[11px]"
+              type="button"
+              onClick={handleReplyClick}
+              className="flex items-center gap-1.5 hover:text-accent transition-colors uppercase tracking-wider text-[11px] p-1 -ml-1"
             >
-              <MessageSquare size={13} />
-              <span>Balas</span>
+              <MessageSquare size={13} className="text-accent" />
+              <span>
+                {tx.replies.length > 0 ? `${tx.replies.length} Resonansi` : 'Balas'}
+              </span>
             </button>
 
-            {tx.replies.length > 0 && (
-              <button
-                onClick={() => onToggleThread(tx.id)}
-                className="hover:text-accent transition-colors flex items-center gap-1 text-[11px] uppercase tracking-wider"
-              >
-                <span>{tx.replies.length} Resonansi</span>
-                {isThreadOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </button>
+            {/* Indikator buka thread */}
+            {!isInsideDetail && tx.replies.length > 0 && (
+              <span className="text-[10px] text-text-secondary/50 font-mono">
+                • ketuk untuk buka thread
+              </span>
             )}
 
             {isMyPost && (
               <button
-                onClick={() => onDeleteTransmission(tx.id)}
+                type="button"
+                onClick={handleDeleteClick}
                 className="ml-auto text-text-secondary/40 hover:text-red-400 transition-colors p-1"
                 title="Hapus transmisi ini"
               >
@@ -150,87 +176,6 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
               </button>
             )}
           </div>
-
-          {/* Input Balasan Cepat (Jika aktif) */}
-          {isReplying && (
-            <form
-              onSubmit={(e) => onSubmitReply(tx.id, e)}
-              className="mt-3 flex items-center gap-2 p-2 border border-border bg-background/90 animate-in fade-in duration-100"
-            >
-              <input
-                type="text"
-                value={replyInputValue}
-                onChange={(e) => onReplyInputChange(tx.id, e.target.value)}
-                placeholder={`Balas sebagai ${myAlias || myId}...`}
-                maxLength={250}
-                autoFocus
-                className="flex-1 bg-transparent text-xs font-sans text-text-secondary placeholder:text-text-secondary/40 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!replyInputValue.trim()}
-                className="px-3 py-1 bg-text-primary text-background hover:bg-accent font-mono text-[10px] uppercase tracking-widest disabled:opacity-30 transition-colors"
-              >
-                Kirim
-              </button>
-              <button
-                type="button"
-                onClick={() => onToggleReply(tx.id)}
-                className="p-1 text-text-secondary hover:text-text-primary"
-              >
-                <X size={13} />
-              </button>
-            </form>
-          )}
-
-          {/* Daftar Balasan (Gaya Thread Indented) */}
-          {isThreadOpen && tx.replies.length > 0 && (
-            <div className="mt-3 space-y-2.5 pt-2 border-t border-border/40">
-              {tx.replies.map((reply) => {
-                const isHost =
-                  reply.authorAlias?.toLowerCase() === 'sorside' || reply.authorId === 'ss-001';
-                const isMyReply = reply.authorId === myId;
-                const replyAuthor = reply.authorAlias || reply.authorId;
-
-                return (
-                  <div
-                    key={reply.id}
-                    className={`p-3 border text-xs font-sans space-y-1.5 ${
-                      isHost
-                        ? 'border-accent/80 bg-accent/5'
-                        : 'border-border/60 bg-surface/40'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between font-mono text-[10px] text-text-secondary">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`font-semibold ${
-                            isHost ? 'text-accent' : 'text-text-primary'
-                          }`}
-                        >
-                          {replyAuthor}
-                        </span>
-                        {isHost && (
-                          <span className="px-1 bg-accent text-background text-[9px] uppercase font-bold tracking-wider">
-                            HOST
-                          </span>
-                        )}
-                        {isMyReply && (
-                          <span className="text-accent text-[9px] uppercase">
-                            (Anda)
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-text-secondary/80">{reply.timestamp}</span>
-                    </div>
-                    <p className="text-text-secondary font-sans leading-relaxed">
-                      {reply.content}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
     </article>

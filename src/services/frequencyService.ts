@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Transmission, Reply } from '../pages/Frequency/components/TransmissionItem';
+import { formatRelativeTime } from '../utils/timeAgo';
 
 const TRANSMISSIONS_COLLECTION = 'transmissions';
 
@@ -27,7 +28,7 @@ export const subscribeTransmissions = (
     const q = query(
       collection(db, TRANSMISSIONS_COLLECTION),
       orderBy('createdAt', 'desc'),
-      limit(50)
+      limit(60)
     );
 
     const unsubscribe = onSnapshot(
@@ -35,14 +36,37 @@ export const subscribeTransmissions = (
       (snapshot) => {
         const list: Transmission[] = snapshot.docs.map((docSnap) => {
           const data = docSnap.data();
+          
+          // Hitung waktu transmisi dinamis dari data.createdAt jika ada
+          const calculatedTimestamp = data.createdAt 
+            ? formatRelativeTime(data.createdAt, data.timestamp || 'Baru saja')
+            : (data.timestamp || 'Baru saja');
+
+          // Hitung waktu balasan dinamis jika punya raw timestamp
+          const replies: Reply[] = Array.isArray(data.replies) 
+            ? data.replies.map((r: any) => ({
+                id: r.id || `rep-${Math.random()}`,
+                authorId: r.authorId || 'ss-000',
+                authorAlias: r.authorAlias || undefined,
+                content: r.content || '',
+                timestamp: r.createdAt 
+                  ? formatRelativeTime(r.createdAt, r.timestamp || 'Baru saja')
+                  : formatRelativeTime(r.timestamp, r.timestamp || 'Baru saja'),
+                createdAt: r.createdAt || null,
+                replyToId: r.replyToId || undefined,
+                replyToName: r.replyToName || undefined
+              }))
+            : [];
+
           return {
             id: docSnap.id,
             authorId: data.authorId || 'ss-000',
             authorAlias: data.authorAlias || undefined,
             content: data.content || '',
             tag: data.tag || undefined,
-            timestamp: data.timestamp || 'Baru saja',
-            replies: Array.isArray(data.replies) ? data.replies : []
+            timestamp: calculatedTimestamp,
+            createdAt: data.createdAt || null,
+            replies
           };
         });
         onUpdate(list);
@@ -83,7 +107,16 @@ export const createTransmissionToFirestore = async (newTx: Omit<Transmission, 'r
 export const addReplyToFirestore = async (txId: string, reply: Reply) => {
   const txRef = doc(db, TRANSMISSIONS_COLLECTION, txId);
   await updateDoc(txRef, {
-    replies: arrayUnion(reply)
+    replies: arrayUnion({
+      id: reply.id,
+      authorId: reply.authorId,
+      authorAlias: reply.authorAlias || null,
+      content: reply.content,
+      timestamp: reply.timestamp,
+      createdAt: Date.now(), // Gunakan millisecond timestamp agar aman disimpan dalam array Firestore
+      replyToId: reply.replyToId || null,
+      replyToName: reply.replyToName || null
+    })
   });
 };
 
