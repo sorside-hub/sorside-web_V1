@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, Info, RefreshCw, Radio, ChevronRight } from 'lucide-react';
+import { X, User, Info, Radio, ChevronRight } from 'lucide-react';
 
 interface FrequencyMenuDrawerProps {
   isOpen: boolean;
@@ -9,7 +9,6 @@ interface FrequencyMenuDrawerProps {
   avatarInitials: string;
   onOpenProfile: () => void;
   onOpenInfo: () => void;
-  onRegenerateId: () => void;
 }
 
 export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
@@ -20,7 +19,6 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
   avatarInitials,
   onOpenProfile,
   onOpenInfo,
-  onRegenerateId,
 }) => {
   if (!isOpen) return null;
 
@@ -84,10 +82,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
         <div className="flex-1 p-3 space-y-1.5 overflow-y-auto">
           {/* 1. Menu Profil */}
           <button
-            onClick={() => {
-              onClose();
-              onOpenProfile();
-            }}
+            onClick={onOpenProfile}
             className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
           >
             <div className="flex items-center gap-3">
@@ -108,10 +103,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
 
           {/* 2. Menu Tentang Frekuensi */}
           <button
-            onClick={() => {
-              onClose();
-              onOpenInfo();
-            }}
+            onClick={onOpenInfo}
             className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
           >
             <div className="flex items-center gap-3">
@@ -128,32 +120,6 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
               </div>
             </div>
             <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary group-hover:translate-x-0.5 transition-all" />
-          </button>
-
-          {/* 3. Acak Ulang Identitas ID */}
-          <button
-            onClick={() => {
-              if (window.confirm('Acak ulang ID anonim Anda? ID lama akan diganti dengan ID baru.')) {
-                onRegenerateId();
-                onClose();
-              }
-            }}
-            className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 border border-border bg-background text-text-secondary group-hover:text-text-primary transition-colors">
-                <RefreshCw size={16} />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-text-primary">
-                  Acak Ulang ID
-                </div>
-                <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
-                  Dapatkan ID unik anonim baru
-                </div>
-              </div>
-            </div>
-            <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary transition-all" />
           </button>
         </div>
 

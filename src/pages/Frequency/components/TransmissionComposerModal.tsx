@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { X, Send } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { X, Send, ChevronRight, Plus, Hash, Search } from 'lucide-react';
+import { TopicSearchModal } from './TopicSearchModal';
 
 interface TransmissionComposerModalProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ interface TransmissionComposerModalProps {
   onTagChange: (tag: string) => void;
   tagOptions: string[];
   avatarInitials?: string;
+  isTopicModalOpen: boolean;
+  onOpenTopicModal: () => void;
+  onCloseTopicModal: () => void;
 }
 
 export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps> = ({
@@ -27,59 +31,33 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
   onTagChange,
   tagOptions,
   avatarInitials,
+  isTopicModalOpen,
+  onOpenTopicModal,
+  onCloseTopicModal,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Fokus otomatis dan dukungan popstate (tombol Back HP / Browser)
+  // Auto-fokus textarea saat modal terbuka
   useEffect(() => {
     if (!isOpen) return;
 
-    // Tambahkan state ke history agar tombol Back menutup modal, bukan keluar dari web
-    window.history.pushState({ composerOpen: true }, '');
-
-    const handlePopState = () => {
-      onClose();
-    };
-
-    window.addEventListener('popstate', handlePopState);
-
-    // Auto fokus textarea
     const timer = setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        // Taruh kursor di ujung teks draft
         const len = textareaRef.current.value.length;
         textareaRef.current.setSelectionRange(len, len);
       }
     }, 50);
 
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      clearTimeout(timer);
-    };
-  }, [isOpen, onClose]);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const handleClose = () => {
-    // Kembalikan riwayat history jika ditutup manual lewat tombol
-    if (window.history.state?.composerOpen) {
-      window.history.back();
-    } else {
-      onClose();
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!draftContent.trim()) return;
     onSubmit(draftContent.trim(), selectedTag);
-    // Tutup modal
-    if (window.history.state?.composerOpen) {
-      window.history.back();
-    } else {
-      onClose();
-    }
   };
 
   return (
@@ -91,7 +69,7 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
         <div className="border-b border-border/80 px-4 py-3 flex items-center justify-between shrink-0 bg-surface/40">
           <button
             type="button"
-            onClick={handleClose}
+            onClick={onClose}
             className="text-xs font-mono text-text-secondary hover:text-text-primary uppercase tracking-wider flex items-center gap-1 py-1 px-2 border border-transparent hover:border-border transition-colors"
           >
             <X size={15} />
@@ -120,15 +98,49 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
 
         {/* IDENTITY & CONTENT AREA */}
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
-          {/* Identitas Penulis: Sembunyikan ID jika punya Alias, tanpa badge anonim */}
-          <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
-            <div className="w-8 h-8 rounded-full border border-border bg-surface flex items-center justify-center font-mono text-[11px] text-text-primary font-bold tracking-tighter">
+          {/* Identitas Penulis & Pilihan Topik Pas Samping ID/Alias */}
+          <div className="flex items-center gap-2 pb-2 border-b border-border/40 flex-wrap">
+            <div className="w-8 h-8 rounded-full border border-border bg-surface flex items-center justify-center font-mono text-[11px] text-text-primary font-bold tracking-tighter shrink-0">
               {avatarInitials || (myAlias ? myAlias[0].toUpperCase() : myId.slice(3))}
             </div>
-            <div className="flex items-baseline font-mono text-xs">
+
+            <div className="flex items-center gap-1.5 font-mono text-xs flex-wrap">
               <span className="font-semibold text-text-primary">
                 {myAlias || myId}
               </span>
+
+              <ChevronRight size={13} className="text-text-secondary/50 shrink-0" />
+
+              {/* Tombol Pilih / Tampil Topik */}
+              {selectedTag ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={onOpenTopicModal}
+                    className="font-mono text-xs text-text-secondary hover:underline font-semibold"
+                    title="Ganti topic"
+                  >
+                    <span>#{selectedTag.replace(/^#+/, '')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onTagChange('')}
+                    className="p-0.5 text-text-secondary/60 hover:text-text-primary transition-colors"
+                    title="Hapus topic"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenTopicModal}
+                  className="flex items-center gap-1 font-mono text-xs text-text-secondary hover:text-text-primary transition-colors"
+                >
+                  <Plus size={11} className="text-accent" />
+                  <span>Tambah Topic</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -144,37 +156,23 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
           />
         </div>
 
-        {/* BOTTOM CONTROLS: PILIHAN VIBE TAG & COUNTER KARAKTER */}
-        <div className="border-t border-border/80 p-4 bg-surface/30 space-y-3 shrink-0">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">
-              Vibe Frekuensi:
-            </span>
-            <span className="font-mono text-[11px] text-text-secondary">
-              {draftContent.length}/1000
-            </span>
-          </div>
-
-          {/* Pilihan Tag Frekuensi */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {tagOptions.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => onTagChange(tag)}
-                className={`px-2.5 py-1 text-[11px] font-mono uppercase tracking-wider border transition-all ${
-                  selectedTag === tag
-                    ? 'border-accent bg-accent text-background font-bold'
-                    : 'border-border/70 text-text-secondary hover:border-border hover:text-text-primary bg-surface/40'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+        {/* BOTTOM CONTROLS: HANYA COUNTER KARAKTER */}
+        <div className="border-t border-border/80 px-4 py-2 bg-surface/30 flex justify-end shrink-0">
+          <span className="font-mono text-xs text-text-secondary">
+            {draftContent.length}/1000
+          </span>
         </div>
 
       </div>
+
+      {/* MODAL SEARCH & CREATION TOPIK */}
+      <TopicSearchModal
+        isOpen={isTopicModalOpen}
+        onClose={onCloseTopicModal}
+        onSelectTopic={(topic) => onTagChange(topic)}
+        existingTopics={tagOptions}
+        currentTopic={selectedTag}
+      />
     </div>
   );
 };

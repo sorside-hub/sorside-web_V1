@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, MessageSquare, Send, CornerDownRight, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Send, CornerDownRight, X, Trash2, ChevronRight } from 'lucide-react';
 import { Transmission, Reply } from './TransmissionItem';
 
 interface TransmissionDetailModalProps {
@@ -38,22 +38,12 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
     }
   }, [initialReplyTarget]);
 
-  // Support tombol Back HP / browser
+  // Scroll to top saat modal muncul
   useEffect(() => {
-    if (!tx) return;
-    window.history.pushState({ modalOpen: true, txId: tx.id }, '');
-
-    const handlePopState = () => {
-      onClose();
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    window.scrollTo({ top: 0, behavior: 'instant' });
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [tx, onClose]);
+    if (tx) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [tx?.id]);
 
   if (!tx) return null;
 
@@ -61,11 +51,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
   const primaryId = tx.authorAlias || tx.authorId;
 
   const handleBack = () => {
-    if (window.history.state?.modalOpen) {
-      window.history.back();
-    } else {
-      onClose();
-    }
+    onClose();
   };
 
   const handleSetReplyTo = (replyAuthorId: string, replyAuthorAlias?: string) => {
@@ -127,7 +113,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
               onClick={() => onAuthorClick?.(tx.authorId, tx.authorAlias)}
               className={`w-11 h-11 rounded-full border flex items-center justify-center font-mono text-xs font-bold tracking-tighter cursor-pointer hover:border-accent transition-colors ${
                 isMyPost
-                  ? 'border-accent text-accent bg-accent/10'
+                  ? 'border-accent/80 text-text-primary bg-accent/5'
                   : 'border-border/90 bg-surface/80 text-text-primary'
               }`}
             >
@@ -135,30 +121,27 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span 
                   onClick={() => onAuthorClick?.(tx.authorId, tx.authorAlias)}
                   className="font-mono font-bold text-sm text-text-primary hover:underline cursor-pointer truncate"
                 >
                   {primaryId}
                 </span>
-                {isMyPost && (
-                  <span className="text-[9px] text-accent px-1 border border-accent/60 uppercase font-mono">
-                    Anda
-                  </span>
+
+                {tx.tag && (
+                  <div className="flex items-center gap-1.5 font-mono text-xs">
+                    <ChevronRight size={13} className="text-text-secondary/50 shrink-0" />
+                    <span className="text-text-secondary font-semibold">
+                      #{tx.tag.replace(/^#+/, '')}
+                    </span>
+                  </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 font-mono text-[11px] text-text-secondary">
+              <div className="flex items-center gap-2 font-mono text-[11px] text-text-secondary mt-0.5">
                 <span>{tx.timestamp}</span>
               </div>
             </div>
-
-            {/* Tag jika ada */}
-            {tx.tag && (
-              <span className="border border-border/70 px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider text-text-secondary">
-                {tx.tag}
-              </span>
-            )}
           </div>
 
           {/* Konten Utama (Ukuran Lebih Besar & Spasi Lega) */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { MessageSquare, Trash2, ChevronRight } from 'lucide-react';
 
 export interface Reply {
   id: string;
@@ -32,6 +32,7 @@ interface TransmissionItemProps {
   onQuickReply?: (tx: Transmission, targetReply?: Reply) => void;
   onDeleteTransmission: (id: string) => void;
   onAuthorClick?: (authorId: string, authorAlias?: string) => void;
+  onTopicClick?: (topic: string) => void;
   isInsideDetail?: boolean;
 }
 
@@ -44,6 +45,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
   onQuickReply,
   onDeleteTransmission,
   onAuthorClick,
+  onTopicClick,
   isInsideDetail = false,
 }) => {
   const isMyPost = tx.authorId === myId;
@@ -54,6 +56,13 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
     e.stopPropagation();
     if (onAuthorClick) {
       onAuthorClick(tx.authorId, tx.authorAlias);
+    }
+  };
+
+  const handleTopicClick = (e: React.MouseEvent, topic: string) => {
+    e.stopPropagation();
+    if (onTopicClick) {
+      onTopicClick(topic);
     }
   };
 
@@ -79,6 +88,8 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
     }
   };
 
+  const cleanTopic = tx.tag ? tx.tag.replace(/^#+/, '') : '';
+
   return (
     <article 
       id={`transmission-${tx.id}`} 
@@ -96,7 +107,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
             onClick={handleAuthorClick}
             className={`w-10 h-10 rounded-full border flex items-center justify-center font-mono text-xs font-bold tracking-tighter cursor-pointer hover:border-accent transition-colors ${
               isMyPost
-                ? 'border-accent text-accent bg-accent/10'
+                ? 'border-accent/80 text-text-primary bg-accent/5'
                 : 'border-border/90 bg-surface/80 text-text-primary'
             }`}
           >
@@ -106,33 +117,33 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
 
         {/* Kolom Kanan: Header, Isi Cerita, Aksi */}
         <div className="flex-1 min-w-0 pt-0.5 space-y-2">
-          {/* Header Baris Tunggal: ID/Alias di kiri, Waktu di kanan */}
+          {/* Header Baris Tunggal: ID/Alias > Topik di kiri, Waktu di kanan */}
           <div className="flex items-center justify-between text-xs font-mono">
-            <div 
-              onClick={handleAuthorClick}
-              className="flex items-center gap-1.5 min-w-0 cursor-pointer group"
-            >
-              <span
-                className={`font-semibold truncate group-hover:underline ${
-                  isMyPost ? 'text-accent' : 'text-text-primary'
-                }`}
+            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+               <span
+                onClick={handleAuthorClick}
+                className="font-semibold text-text-primary truncate hover:underline cursor-pointer"
               >
                 {primaryId}
               </span>
-              {isMyPost && (
-                <span className="text-[9px] text-accent px-1 border border-accent/60 uppercase shrink-0">
-                  Anda
-                </span>
+
+              {/* Tag Topik Tepat Pas di Samping ID/Alias > */}
+              {cleanTopic && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <ChevronRight size={13} className="text-text-secondary/50 shrink-0" />
+                  <span
+                    onClick={(e) => handleTopicClick(e, cleanTopic)}
+                    className="text-text-secondary hover:underline cursor-pointer font-semibold text-xs"
+                    title={`Filter #${cleanTopic}`}
+                  >
+                    #{cleanTopic}
+                  </span>
+                </div>
               )}
             </div>
 
-            {/* Sisi Kanan: Vibe Tag & Waktu Singkat */}
-            <div className="flex items-center gap-2 text-[11px] font-mono text-text-secondary shrink-0">
-              {tx.tag && (
-                <span className="border border-border/70 px-1.5 py-0.2 text-[10px] uppercase tracking-wider text-text-secondary/80">
-                  {tx.tag}
-                </span>
-              )}
+            {/* Sisi Kanan: Waktu Singkat */}
+            <div className="flex items-center gap-2 text-[11px] font-mono text-text-secondary shrink-0 pl-2">
               <span className="text-text-secondary/80">{tx.timestamp}</span>
             </div>
           </div>

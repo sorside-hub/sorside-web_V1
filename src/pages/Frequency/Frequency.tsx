@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, X, Search, RotateCcw } from 'lucide-react';
 import { FrequencyHeader } from './components/FrequencyHeader';
 import { FrequencyMenuDrawer } from './components/FrequencyMenuDrawer';
@@ -77,6 +77,7 @@ export const Frequency: React.FC = () => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [viewProfileTarget, setViewProfileTarget] = useState<UserProfileTarget | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
 
   // Search state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -95,10 +96,97 @@ export const Frequency: React.FC = () => {
       return '';
     }
   });
-  const [selectedVibe, setSelectedVibe] = useState('HENING');
+  const [selectedVibe, setSelectedVibe] = useState('');
 
   // Floating Action Button (+) scroll detector (Poin 5)
   const [showScrollFAB, setShowScrollFAB] = useState(false);
+
+  // Unified Modal History Controllers
+  const openMenu = () => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setIsMenuOpen(true);
+  };
+
+  const openInfo = () => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setShowInfoModal(true);
+  };
+
+  const openProfile = (target: UserProfileTarget) => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setViewProfileTarget(target);
+  };
+
+  const openComposer = () => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setIsComposerOpen(true);
+  };
+
+  const openTopicModal = () => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setIsTopicModalOpen(true);
+  };
+
+  const openDetail = (tx: Transmission, targetReplyUser?: { id: string; name: string }) => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setSelectedTransmission(tx);
+    setInitialReplyTarget(targetReplyUser || null);
+  };
+
+  const handleCloseModal = () => {
+    window.history.back();
+  };
+
+  const handleMenuToProfile = () => {
+    setIsMenuOpen(false);
+    setViewProfileTarget({ id: myId, alias: myAlias, isMe: true });
+  };
+
+  const handleMenuToInfo = () => {
+    setIsMenuOpen(false);
+    setShowInfoModal(true);
+  };
+
+  // Top-level popstate handler (closes topmost active layer)
+  const isTopicModalOpenRef = useRef(isTopicModalOpen);
+  isTopicModalOpenRef.current = isTopicModalOpen;
+
+  const isComposerOpenRef = useRef(isComposerOpen);
+  isComposerOpenRef.current = isComposerOpen;
+
+  const selectedTxRef = useRef(selectedTransmission);
+  selectedTxRef.current = selectedTransmission;
+
+  const showInfoModalRef = useRef(showInfoModal);
+  showInfoModalRef.current = showInfoModal;
+
+  const isMenuOpenRef = useRef(isMenuOpen);
+  isMenuOpenRef.current = isMenuOpen;
+
+  const viewProfileTargetRef = useRef(viewProfileTarget);
+  viewProfileTargetRef.current = viewProfileTarget;
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isTopicModalOpenRef.current) {
+        setIsTopicModalOpen(false);
+      } else if (isComposerOpenRef.current) {
+        setIsComposerOpen(false);
+      } else if (selectedTxRef.current) {
+        setSelectedTransmission(null);
+        setInitialReplyTarget(null);
+      } else if (showInfoModalRef.current) {
+        setShowInfoModal(false);
+      } else if (isMenuOpenRef.current) {
+        setIsMenuOpen(false);
+      } else if (viewProfileTargetRef.current) {
+        setViewProfileTarget(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -142,6 +230,9 @@ export const Frequency: React.FC = () => {
     } catch {
       // ignore
     }
+
+    // Close composer modal
+    handleCloseModal();
 
     // Push to Firestore
     try {
@@ -318,6 +409,14 @@ export const Frequency: React.FC = () => {
       })
     : transmissions;
 
+  // Dynamic topic list dari semua transmisi yang ada
+  const dynamicTagOptions = Array.from(
+    new Set([
+      ...VIBE_OPTIONS,
+      ...transmissions.map(tx => tx.tag).filter(Boolean).map(t => t!.replace(/^#+/, ''))
+    ])
+  );
+
   return (
     <div className="pb-24 max-w-xl mx-auto px-0 relative">
       
@@ -330,7 +429,7 @@ export const Frequency: React.FC = () => {
           }
         }}
         isSearchOpen={isSearchOpen}
-        onOpenMenu={() => setIsMenuOpen(true)}
+        onOpenMenu={openMenu}
       />
 
       {/* SEARCH BAR (Muncul saat tombol Search di kiri header aktif) */}
@@ -372,7 +471,7 @@ export const Frequency: React.FC = () => {
 
       {/* 2. COMPOSER TRIGGER BAR (Hanya tampilkan ID jika belum ada Alias) */}
       <div 
-        onClick={() => setIsComposerOpen(true)}
+        onClick={openComposer}
         className="pb-3.5 pt-0 mb-4 border-b border-border/70 cursor-pointer transition-colors flex items-start gap-3.5 select-none group hover:border-border"
       >
         <div className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center font-mono text-xs text-text-primary font-bold shrink-0 tracking-tighter group-hover:border-accent/80 transition-colors">
@@ -399,7 +498,7 @@ export const Frequency: React.FC = () => {
       {/* MODAL FOKUS MENULIS */}
       <TransmissionComposerModal
         isOpen={isComposerOpen}
-        onClose={() => setIsComposerOpen(false)}
+        onClose={handleCloseModal}
         onSubmit={handlePostTransmission}
         myId={myId}
         myAlias={myAlias}
@@ -407,8 +506,11 @@ export const Frequency: React.FC = () => {
         onDraftChange={handleDraftChange}
         selectedTag={selectedVibe}
         onTagChange={setSelectedVibe}
-        tagOptions={VIBE_OPTIONS}
+        tagOptions={dynamicTagOptions}
         avatarInitials={getAvatarInitials(myId, myAlias)}
+        isTopicModalOpen={isTopicModalOpen}
+        onOpenTopicModal={openTopicModal}
+        onCloseTopicModal={handleCloseModal}
       />
 
       {/* 3. FEED TRANSMISI (Klik card atau balas langsung buka modal mandiri) */}
@@ -437,11 +539,15 @@ export const Frequency: React.FC = () => {
               myId={myId}
               myAlias={myAlias}
               getAvatarInitials={getAvatarInitials}
-              onOpenDetail={handleOpenDetail}
-              onQuickReply={(targetTx) => handleOpenDetail(targetTx)}
+              onOpenDetail={openDetail}
+              onQuickReply={(targetTx) => openDetail(targetTx)}
               onDeleteTransmission={handleDeleteMyTx}
+              onTopicClick={(topic) => {
+                setSearchQuery(topic);
+                setIsSearchOpen(true);
+              }}
               onAuthorClick={(authorId, authorAlias) => {
-                setViewProfileTarget({
+                openProfile({
                   id: authorId,
                   alias: authorAlias,
                   isMe: authorId === myId
@@ -457,7 +563,7 @@ export const Frequency: React.FC = () => {
         <div className="fixed bottom-6 right-6 sm:right-10 z-40 animate-in fade-in zoom-in-95 duration-200">
           <button
             type="button"
-            onClick={() => setIsComposerOpen(true)}
+            onClick={openComposer}
             className="w-13 h-13 p-3.5 bg-text-primary text-background rounded-full shadow-2xl hover:bg-accent hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background/20"
             aria-label="Pancarkan Sinyal Baru"
             title="Pancarkan Sinyal Baru"
@@ -472,18 +578,17 @@ export const Frequency: React.FC = () => {
         <div className="fixed inset-0 z-40 overflow-y-auto bg-background">
           <UserProfileView
             targetUser={viewProfileTarget}
-            onClose={() => setViewProfileTarget(null)}
+            onClose={handleCloseModal}
             myId={myId}
             myAlias={myAlias}
             allTransmissions={transmissions}
             getAvatarInitials={getAvatarInitials}
             onUpdateAlias={handleUpdateAlias}
-            onRegenerateId={handleRegenerateId}
             onDeleteTransmission={handleDeleteMyTx}
             onOpenTransmissionDetail={(tx) => {
-              setSelectedTransmission(tx);
+              openDetail(tx);
             }}
-            onOpenComposer={() => setIsComposerOpen(true)}
+            onOpenComposer={openComposer}
             onAuthorClick={(authorId, authorAlias) => {
               setViewProfileTarget({
                 id: authorId,
@@ -499,10 +604,7 @@ export const Frequency: React.FC = () => {
       {selectedTransmission && (
         <TransmissionDetailModal
           transmission={selectedTransmission}
-          onClose={() => {
-            setSelectedTransmission(null);
-            setInitialReplyTarget(null);
-          }}
+          onClose={handleCloseModal}
           myId={myId}
           myAlias={myAlias}
           getAvatarInitials={getAvatarInitials}
@@ -510,6 +612,7 @@ export const Frequency: React.FC = () => {
           onDeleteTransmission={handleDeleteMyTx}
           initialReplyTarget={initialReplyTarget}
           onAuthorClick={(authorId, authorAlias) => {
+            setSelectedTransmission(null);
             setViewProfileTarget({
               id: authorId,
               alias: authorAlias,
@@ -523,7 +626,7 @@ export const Frequency: React.FC = () => {
       {showInfoModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setShowInfoModal(false)}
+          onClick={handleCloseModal}
         >
           <div 
             className="w-full max-w-md border border-border bg-surface p-6 sm:p-7 space-y-5 shadow-2xl"
@@ -537,7 +640,7 @@ export const Frequency: React.FC = () => {
                 </h3>
               </div>
               <button 
-                onClick={() => setShowInfoModal(false)}
+                onClick={handleCloseModal}
                 className="p-1 border border-border text-text-secondary hover:text-text-primary transition-colors"
               >
                 <X size={15} />
@@ -564,7 +667,7 @@ export const Frequency: React.FC = () => {
 
             <div className="pt-2 border-t border-border/40">
               <button
-                onClick={() => setShowInfoModal(false)}
+                onClick={handleCloseModal}
                 className="w-full py-2.5 bg-text-primary text-background font-mono text-xs uppercase tracking-widest hover:bg-accent transition-colors"
               >
                 Tutup & Mulai Membaca
@@ -577,13 +680,12 @@ export const Frequency: React.FC = () => {
       {/* 8. DRAWER SIDEBAR MENU (Garis Tiga) */}
       <FrequencyMenuDrawer
         isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
+        onClose={handleCloseModal}
         myId={myId}
         myAlias={myAlias}
         avatarInitials={getAvatarInitials(myId, myAlias)}
-        onOpenProfile={() => setViewProfileTarget({ id: myId, alias: myAlias, isMe: true })}
-        onOpenInfo={() => setShowInfoModal(true)}
-        onRegenerateId={handleRegenerateId}
+        onOpenProfile={handleMenuToProfile}
+        onOpenInfo={handleMenuToInfo}
       />
 
     </div>

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Edit3, Check, RefreshCw, MessageSquare, Plus, UserPlus, LogOut } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { ArrowLeft, Edit3, Check, MessageSquare, Plus, UserPlus, LogOut } from 'lucide-react';
 import { Transmission, TransmissionItem } from './TransmissionItem';
 
 export interface UserProfileTarget {
@@ -16,7 +16,6 @@ interface UserProfileViewProps {
   allTransmissions: Transmission[];
   getAvatarInitials: (id: string, alias?: string) => string;
   onUpdateAlias?: (newAlias: string) => void;
-  onRegenerateId?: () => void;
   onDeleteTransmission: (id: string) => void;
   onOpenTransmissionDetail: (tx: Transmission) => void;
   onOpenComposer: () => void;
@@ -32,7 +31,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   allTransmissions,
   getAvatarInitials,
   onUpdateAlias,
-  onRegenerateId,
   onDeleteTransmission,
   onOpenTransmissionDetail,
   onOpenComposer,
@@ -43,21 +41,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   const [isEditingAlias, setIsEditingAlias] = useState(false);
   const [editAliasVal, setEditAliasVal] = useState(targetUser.alias || '');
 
-  // Dukungan tombol Back HP / browser (popstate)
+  // Scroll to top saat user target berubah
   useEffect(() => {
-    window.history.pushState({ profileOpen: true, targetId: targetUser.id }, '');
-
-    const handlePopState = () => {
-      onClose();
-    };
-
-    window.addEventListener('popstate', handlePopState);
     window.scrollTo({ top: 0, behavior: 'instant' });
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [targetUser.id, onClose]);
+  }, [targetUser.id]);
 
   // Sinkronkan input form saat alias berubah
   useEffect(() => {
@@ -65,11 +52,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   }, [targetUser.alias]);
 
   const handleBack = () => {
-    if (window.history.state?.profileOpen) {
-      window.history.back();
-    } else {
-      onClose();
-    }
+    onClose();
   };
 
   const handleSaveAliasSubmit = (e: React.FormEvent) => {
@@ -146,7 +129,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
             </span>
           </div>
 
-          <div className="w-10 h-10" />
+          {targetUser.isMe ? (
+            <button
+              onClick={onOpenComposer}
+              className="w-10 h-10 flex items-center justify-center rounded-full border border-border/80 hover:border-text-primary text-text-secondary hover:text-text-primary transition-colors z-10"
+              aria-label="Pancarkan Sinyal Baru"
+              title="Pancarkan Sinyal Baru"
+            >
+              <Plus size={18} />
+            </button>
+          ) : (
+            <div className="w-10 h-10" />
+          )}
         </div>
       </div>
 
@@ -213,10 +207,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 </form>
               ) : targetUser.alias ? (
                 /* KONDISI B: Pengguna sedang menggunakan nama ALIAS */
-                <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsEditingAlias(true)}
-                    className="font-mono text-xs text-text-secondary hover:text-text-primary flex items-center gap-1.5 py-1.5 px-3 border border-border/70 hover:border-border transition-colors uppercase tracking-wider bg-surface/40"
+                    className="font-mono text-xs text-text-secondary hover:text-text-primary flex items-center gap-1.5 py-1.5 px-2.5 sm:px-3 border border-border/70 hover:border-border transition-colors uppercase tracking-wider bg-surface/40 whitespace-nowrap"
                   >
                     <Edit3 size={12} />
                     <span>Ubah Alias</span>
@@ -224,11 +218,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 
                   <button
                     onClick={handleRemoveAlias}
-                    className="font-mono text-xs text-text-secondary hover:text-red-400 flex items-center gap-1.5 py-1.5 px-3 border border-border/70 hover:border-red-400/60 transition-colors uppercase tracking-wider"
+                    className="font-mono text-xs text-text-secondary hover:text-red-400 flex items-center gap-1.5 py-1.5 px-2.5 sm:px-3 border border-border/70 hover:border-red-400/60 transition-colors uppercase tracking-wider whitespace-nowrap"
                     title="Hapus alias dan kembali menggunakan ID acak"
                   >
                     <LogOut size={12} />
-                    <span>Lepas Alias (Pakai ID)</span>
+                    <span>Lepas Alias</span>
                   </button>
                 </div>
               ) : (
@@ -241,48 +235,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     <UserPlus size={12} className="text-accent" />
                     <span>Pasang Nama Alias</span>
                   </button>
-
-                  {onRegenerateId && (
-                    <button
-                      onClick={onRegenerateId}
-                      className="font-mono text-xs text-text-secondary hover:text-text-primary flex items-center gap-1.5 py-1.5 px-3 border border-border/70 hover:border-border transition-colors uppercase tracking-wider"
-                      title="Ganti angka acak ID perangkat ini"
-                    >
-                      <RefreshCw size={12} />
-                      <span>Acak Ulang ID</span>
-                    </button>
-                  )}
                 </div>
               )}
             </div>
           )}
         </div>
-
-        {/* 2.2 TOMBOL BUAT POST DARI PROFIL ANDA */}
-        {targetUser.isMe && (
-          <div 
-            onClick={onOpenComposer}
-            className="p-3.5 border border-dashed border-border hover:border-accent/80 bg-surface/30 hover:bg-surface/60 transition-all cursor-pointer flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full border border-border flex items-center justify-center font-mono text-xs font-bold text-text-primary group-hover:border-accent">
-                {displayAvatar}
-              </div>
-              <div>
-                <p className="font-mono text-xs font-semibold text-text-primary group-hover:text-accent transition-colors">
-                  Pancarkan Sinyal Baru...
-                </p>
-                <p className="text-[11px] font-sans text-text-secondary">
-                  Tulis catatan atau cerita dari frekuensi profil Anda
-                </p>
-              </div>
-            </div>
-
-            <div className="w-8 h-8 rounded-full bg-text-primary text-background group-hover:bg-accent flex items-center justify-center transition-colors">
-              <Plus size={16} />
-            </div>
-          </div>
-        )}
 
         {/* 3. TAB NAVIGASI ARSIP (Transmisi vs Resonansi) */}
         <div className="flex justify-center border-b border-border/70 font-mono text-xs">
