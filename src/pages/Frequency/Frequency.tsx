@@ -345,7 +345,7 @@ export const Frequency: React.FC = () => {
       handleCloseModal();
     } catch (err: any) {
       console.warn('[Frequency] Validation/Firestore error:', err);
-      alert(err.message || 'Gagal memancarkan sinyal.');
+      alert(err.message || 'Gagal mengirim cerita.');
     }
   };
 
@@ -690,7 +690,7 @@ export const Frequency: React.FC = () => {
               )}
             </div>
             <span className="text-text-secondary/70 text-[10px] shrink-0">
-              ({filteredTransmissions.length} sinyal)
+              ({filteredTransmissions.length} cerita)
             </span>
           </div>
           <button
@@ -767,7 +767,7 @@ export const Frequency: React.FC = () => {
           <div className="py-16 text-center text-text-secondary font-mono text-xs uppercase tracking-widest space-y-2">
             {searchQuery.trim() ? (
               <>
-                <p>Tidak ada transmisi yang cocok dengan "{searchQuery}".</p>
+                <p>Tidak ada cerita yang cocok dengan "{searchQuery}".</p>
                 <button
                   onClick={() => setSearchQuery('')}
                   className="text-accent hover:underline lowercase tracking-normal text-[11px]"
@@ -776,7 +776,7 @@ export const Frequency: React.FC = () => {
                 </button>
               </>
             ) : (
-              <p>Belum ada transmisi. Jadilah yang pertama bercerita.</p>
+              <p>Belum ada cerita. Jadilah yang pertama bercerita.</p>
             )}
           </div>
         ) : (
@@ -815,8 +815,8 @@ export const Frequency: React.FC = () => {
             type="button"
             onClick={openComposer}
             className="w-12 h-12 sm:w-13 sm:h-13 bg-text-primary text-background rounded-full shadow-2xl hover:opacity-90 hover:scale-105 active:scale-95 transition-all flex items-center justify-center border border-border/30"
-            aria-label="Pancarkan Sinyal Baru"
-            title="Pancarkan Sinyal Baru"
+            aria-label="Tulis Cerita Baru"
+            title="Tulis Cerita Baru"
           >
             <Plus size={22} strokeWidth={2.2} />
           </button>
@@ -926,7 +926,7 @@ export const Frequency: React.FC = () => {
                     : 'text-text-secondary/70 hover:text-text-primary'
                 }`}
               >
-                <span>Aturan Sinyal</span>
+                <span>Aturan & Info</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-accent" />
               </button>
             </div>
@@ -941,10 +941,10 @@ export const Frequency: React.FC = () => {
                   </p>
                   <p>
                     <strong className="text-text-primary font-mono block mb-1">// TANPA LOGIN & TANPA DATA PRIBADI</strong>
-                    Identitas sinyal Anda (<code className="text-accent font-mono">{myId}</code>) digenerate secara acak dan hanya tinggal di dalam peramban perangkat Anda.
+                    Identitas akun Anda (<code className="text-accent font-mono">{myId}</code>) digenerate secara acak dan hanya tinggal di dalam peramban perangkat Anda.
                   </p>
                   <p>
-                    <strong className="text-text-primary font-mono block mb-1">// RESONANSI (DUA ARAH)</strong>
+                    <strong className="text-text-primary font-mono block mb-1">// DUA ARAH (SALING MEMBALAS)</strong>
                     Anda bisa membaca, membalas, dan merespons cerita pengunjung lain secara leluasa.
                   </p>
                 </div>
@@ -979,7 +979,7 @@ export const Frequency: React.FC = () => {
 
                   <div className="p-3 border border-border/70 bg-background/50 space-y-1">
                     <div className="font-mono font-bold text-text-primary text-[11px] uppercase tracking-wider">
-                      4. KEAMANAN SINYAL (NO MALWARE)
+                      4. KEAMANAN (NO MALWARE)
                     </div>
                     <p className="text-[11px] text-text-secondary">
                       Dilarang menyebarkan tautan berbahaya (*phishing*), pornografi eksplisit, atau instruksi tindakan melanggar hukum.
@@ -988,7 +988,7 @@ export const Frequency: React.FC = () => {
 
                   <div className="p-3 border border-border/70 bg-background/50 space-y-1">
                     <div className="font-mono font-bold text-text-primary text-[11px] uppercase tracking-wider">
-                      5. BERESONANSI DENGAN EMPATI
+                      5. MEMBALAS DENGAN EMPATI
                     </div>
                     <p className="text-[11px] text-text-secondary">
                       Saat membalas cerita orang lain, berikan tanggapan yang santun dan empati tanpa menghakimi.
@@ -1070,7 +1070,7 @@ export const Frequency: React.FC = () => {
           >
             <div className="space-y-1.5">
               <h4 className="font-mono text-sm font-bold text-text-primary uppercase tracking-wider">
-                Hapus Transmisi?
+                Hapus Cerita?
               </h4>
               <p className="font-sans text-xs text-text-secondary leading-relaxed">
                 Cerita ini akan dihapus secara permanen dari gelombang Frequency dan database. Tindakan ini tidak dapat dibatalkan.

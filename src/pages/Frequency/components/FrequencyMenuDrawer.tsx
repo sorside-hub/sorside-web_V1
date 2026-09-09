@@ -72,7 +72,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
         <div className="p-4 border-b border-border/80 flex items-center justify-between bg-surface">
           <div className="flex items-center gap-2 font-mono text-xs text-text-primary uppercase tracking-wider font-semibold">
             <Radio size={14} className="text-accent" />
-            <span>Sinyal Kontrol</span>
+            <span>Pengaturan</span>
           </div>
           <button
             onClick={onClose}
@@ -124,7 +124,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
                   Profil Saya
                 </div>
                 <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
-                  Arsip cerita, resonansi, & atur alias
+                  Arsip cerita, balasan, & atur alias
                 </div>
               </div>
             </div>

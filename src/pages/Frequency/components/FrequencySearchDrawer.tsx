@@ -204,7 +204,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
           <div className="flex items-center gap-2">
             <Radio size={16} className="text-accent animate-pulse" />
             <span className="font-mono text-xs uppercase tracking-wider text-text-primary font-bold">
-              Eksplorasi Sinyal
+              Eksplorasi
             </span>
           </div>
           <button
@@ -228,7 +228,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
               spellCheck="false"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="cari topic, id, alias"
+              placeholder="cari topik, id, alias"
               className="w-full bg-surface border border-border/90 pl-9 pr-9 py-2.5 font-mono text-xs text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent transition-all"
             />
             {query && (
@@ -285,7 +285,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
                         {auth.alias || auth.id}
                       </div>
                       <div className="font-mono text-[10px] text-text-secondary">
-                        {auth.alias ? `id: ${auth.id} • ` : ''}{auth.count} sinyal
+                        {auth.alias ? `id: ${auth.id} • ` : ''}{auth.count} cerita
                       </div>
                     </div>
                     <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-accent transition-colors" />
@@ -300,16 +300,16 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
             <div className="flex items-center justify-between font-mono text-[11px] text-text-secondary uppercase tracking-wider font-semibold">
               <div className="flex items-center gap-1.5">
                 <Flame size={13} className="text-accent" />
-                <span>{isQueryEmpty ? 'Topic Hangat (Frekuensi)' : 'Topic Sesuai'}</span>
+                <span>{isQueryEmpty ? 'Topik Populer' : 'Topik Sesuai'}</span>
               </div>
               <span className="text-[10px] font-normal text-text-secondary/70">
-                {filteredTopics.length} topic
+                {filteredTopics.length} topik
               </span>
             </div>
 
             {filteredTopics.length === 0 ? (
               <div className="p-4 border border-dashed border-border text-center">
-                <p className="font-mono text-xs text-text-secondary">Tidak ada topic &quot;{query}&quot;</p>
+                <p className="font-mono text-xs text-text-secondary">Tidak ada topik &quot;{query}&quot;</p>
               </div>
             ) : (
               <div className="divide-y divide-border/40 border border-border/70 bg-surface/20">
@@ -330,7 +330,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
                         )}
                       </div>
                       <div className="font-mono text-[10px] text-text-secondary mt-0.5">
-                        {top.count} sinyal / cerita
+                        {top.count} cerita
                       </div>
                     </div>
                     <ChevronRight size={13} className="text-text-secondary/40 group-hover:text-accent transition-colors shrink-0" />
@@ -345,7 +345,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
             <div className="space-y-2 pt-2">
               <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-secondary uppercase tracking-wider font-semibold">
                 <CornerDownRight size={13} className="text-accent" />
-                <span>Sinyal & Cerita Cocok</span>
+                <span>Cerita Terkait</span>
               </div>
               <div className="space-y-2">
                 {searchResults.transmissions.map((tx) => (
@@ -376,7 +376,7 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
                       {tx.content}
                     </p>
                     <div className="font-mono text-[9px] text-text-secondary/60 text-right">
-                      {tx.replies && tx.replies.length > 0 ? `${tx.replies.length} balasan` : 'Buka sinyal'}
+                      {tx.replies && tx.replies.length > 0 ? `${tx.replies.length} balasan` : 'Buka cerita'}
                     </div>
                   </div>
                 ))}

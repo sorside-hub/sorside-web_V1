@@ -59,7 +59,7 @@ export const IdentityRecoveryModal: React.FC<IdentityRecoveryModalProps> = ({
         onClose();
       }, 1200);
     } catch (err) {
-      setErrorMsg('Gagal memulihkan sinyal. Periksa koneksi internet Anda.');
+      setErrorMsg('Gagal memulihkan identitas. Periksa koneksi internet Anda.');
       setIsLoading(false);
     }
   };
@@ -220,7 +220,7 @@ export const IdentityRecoveryModal: React.FC<IdentityRecoveryModalProps> = ({
                 {isLoading ? (
                   <>
                     <RefreshCw size={13} className="animate-spin" />
-                    <span>Memverifikasi Sinyal...</span>
+                    <span>Memverifikasi Identitas...</span>
                   </>
                 ) : (
                   <>

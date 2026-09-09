@@ -183,16 +183,12 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
 
       <div className="max-w-xl mx-auto px-4 sm:px-0 space-y-6 sm:mt-0 mt-6">
         {/* 2. POSTINGAN UTAMA (DEDICATED FULL VIEW) */}
-        <div className="space-y-4 border-b border-border/70 pb-6">
+        <div className="space-y-4">
           {/* Header Penulis: Jika punya alias tampilkan alias saja, jika belum set alias tampilkan ID */}
           <div className="flex items-center gap-3">
             <div
               onClick={() => onAuthorClick?.(tx.authorId, tx.authorAlias)}
-              className={`w-11 h-11 rounded-full border flex items-center justify-center cursor-pointer hover:border-accent transition-colors overflow-hidden ${
-                isMyPost
-                  ? 'border-accent/80 bg-accent/5'
-                  : 'border-border/90 bg-surface/80'
-              }`}
+              className="w-11 h-11 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center cursor-pointer hover:border-text-secondary/70 transition-colors overflow-hidden"
             >
               {getAvatarInitials(tx.authorId, tx.authorAlias)}
             </div>
@@ -239,7 +235,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                     onDeleteTransmission(tx.id);
                   }}
                   className="text-text-secondary/40 hover:text-red-400 flex items-center transition-colors p-1"
-                  title="Hapus transmisi ini"
+                  title="Hapus cerita ini"
                 >
                   <Trash2 size={13} />
                 </button>
@@ -253,8 +249,8 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
           </p>
 
           {/* Meta Info Bawah & Tombol Hapus */}
-          <div className="pt-2 flex items-center justify-between text-xs font-mono text-text-secondary border-t border-border/40">
-            <div className="flex items-center gap-1.5" title="Resonansi balasan">
+          <div className="py-2.5 flex items-center justify-between text-xs font-mono text-text-secondary border-t border-b border-border/40">
+            <div className="flex items-center gap-1.5" title="Balasan">
               <MessageSquare size={13} className="text-accent" />
               <span>{tx.replies.length}</span>
             </div>
@@ -264,7 +260,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                 type="button"
                 onClick={() => onReportTransmission?.(tx)}
                 className="text-text-secondary/60 hover:text-amber-500 flex items-center gap-1 transition-colors p-1"
-                title="Laporkan sinyal ini"
+                title="Laporkan cerita ini"
               >
                 <Flag size={12} />
                 <span className="text-[11px] uppercase">Laporkan</span>
@@ -274,11 +270,10 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
         </div>
 
         {/* 3. DAFTAR BALASAN LANGSUNG (Instagram Style) */}
-        <div className="space-y-4 pt-2">
+        <div className="space-y-4 pt-1">
           {groupedReplies.length === 0 ? (
-            <div className="py-12 text-center text-text-secondary/60 font-mono text-xs space-y-2">
-              <p>Belum ada resonansi pada frekuensi ini.</p>
-              <p className="text-[11px] text-text-secondary/40">Jadilah yang pertama menyambung getaran cerita.</p>
+            <div className="py-12 text-center text-text-secondary/60 font-mono text-xs">
+              <p>Belum ada balasan pada cerita ini.</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -294,9 +289,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                       {/* Avatar */}
                       <div
                         onClick={() => onAuthorClick?.(root.authorId, root.authorAlias)}
-                        className={`w-7 h-7 rounded-full flex items-center justify-center cursor-pointer border shrink-0 overflow-hidden ${
-                          isMyRoot ? 'border-accent' : 'border-border/80 hover:border-accent'
-                        }`}
+                        className="w-7 h-7 rounded-full flex items-center justify-center cursor-pointer border border-border/80 bg-surface/80 hover:border-text-secondary/70 shrink-0 overflow-hidden transition-colors"
                       >
                         {getAvatarInitials(root.authorId, root.authorAlias)}
                       </div>
@@ -388,9 +381,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                                   {/* Avatar Anak */}
                                   <div
                                     onClick={() => onAuthorClick?.(child.authorId, child.authorAlias)}
-                                    className={`w-6 h-6 rounded-full flex items-center justify-center cursor-pointer border shrink-0 mt-0.5 overflow-hidden ${
-                                      isMyChild ? 'border-accent' : 'border-border/80 hover:border-accent'
-                                    }`}
+                                    className="w-6 h-6 rounded-full flex items-center justify-center cursor-pointer border border-border/80 bg-surface/80 hover:border-text-secondary/70 shrink-0 mt-0.5 overflow-hidden transition-colors"
                                   >
                                     {getAvatarInitials(child.authorId, child.authorAlias)}
                                   </div>
@@ -507,7 +498,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
               placeholder={
                 targetReply
                   ? `Balas @${targetReply.name}...`
-                  : `Kirim resonansi sebagai ${myAlias || myId}...`
+                  : `Balas sebagai ${myAlias || myId}...`
               }
               maxLength={280}
               className="flex-1 bg-surface border border-border/80 px-3.5 py-2 font-sans text-xs text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent"

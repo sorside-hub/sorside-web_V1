@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="id" class="dark">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,7 +15,35 @@
     <meta name="twitter:title" content="sorside" />
     <meta name="twitter:description" content="Ruang untuk musik, cerita, dan sisi lain yang tidak terlihat." />
     <meta name="twitter:image" content="/pwa-512x512.png" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta id="theme-color-meta" name="theme-color" content="#0a0a0a" />
+    <script>
+      (function() {
+        const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+        function applyTheme(isDark) {
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            const meta = document.getElementById('theme-color-meta');
+            if (meta) meta.setAttribute('content', '#0a0a0a');
+          } else {
+            document.documentElement.classList.remove('dark');
+            const meta = document.getElementById('theme-color-meta');
+            if (meta) meta.setAttribute('content', '#f4f4f4');
+          }
+        }
+        applyTheme(themeMedia.matches);
+        try {
+          themeMedia.addEventListener('change', function(e) {
+            applyTheme(e.matches);
+          });
+        } catch (e) {
+          try {
+            themeMedia.addListener(function(e) {
+              applyTheme(e.matches);
+            });
+          } catch (_) {}
+        }
+      })();
+    </script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />

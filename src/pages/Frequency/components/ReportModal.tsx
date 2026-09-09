@@ -113,7 +113,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
         <div className="flex items-center justify-between border-b border-border/60 pb-4 shrink-0">
           <div className="flex items-center gap-2 text-amber-500 font-mono text-sm uppercase font-bold tracking-wider">
             <Flag size={16} />
-            <span>Laporkan {targetType === 'transmission' ? 'Sinyal' : 'Balasan'}</span>
+            <span>Laporkan {targetType === 'transmission' ? 'Cerita' : 'Balasan'}</span>
           </div>
           <button
             type="button"

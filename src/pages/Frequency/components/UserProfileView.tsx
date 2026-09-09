@@ -170,11 +170,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     ✦
                   </span>
                 )}
-                {targetUser.isMe && (
-                  <span className="font-mono text-[10px] text-accent border border-accent/60 px-1 py-0.2 uppercase shrink-0">
-                    Anda
-                  </span>
-                )}
               </div>
 
               {/* ID subtext jika user menggunakan alias */}
@@ -186,7 +181,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 
               {/* Tanggal Sinyal Pertama */}
               <div className="font-mono text-[11px] text-text-secondary/80 pt-0.5">
-                <span>Sinyal pertama terdeteksi: </span>
+                <span>Bergabung sejak: </span>
                 <span className="text-text-primary">{firstSignalText}</span>
               </div>
             </div>
@@ -268,8 +263,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               <button
                 onClick={onOpenComposer}
                 className="w-7 h-7 flex items-center justify-center rounded-full bg-text-primary text-background hover:bg-accent transition-colors shadow-sm"
-                aria-label="Pancarkan Sinyal Baru"
-                title="Pancarkan Sinyal Baru"
+                aria-label="Tulis Cerita Baru"
+                title="Tulis Cerita Baru"
               >
                 <Plus size={14} strokeWidth={2.5} />
               </button>
@@ -280,11 +275,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               onClick={() => setActiveTab('transmissions')}
               className={`px-2 uppercase tracking-wider transition-colors relative ${
                 activeTab === 'transmissions'
-                  ? 'text-accent font-bold'
+                  ? 'text-text-primary font-bold'
                   : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              Transmisi ({userTransmissions.length})
+              Cerita ({userTransmissions.length})
               {activeTab === 'transmissions' && (
                 <span className="absolute -bottom-3 left-0 right-0 h-[2px] bg-accent"></span>
               )}
@@ -294,11 +289,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               onClick={() => setActiveTab('comments')}
               className={`px-2 uppercase tracking-wider transition-colors relative ${
                 activeTab === 'comments'
-                  ? 'text-accent font-bold'
+                  ? 'text-text-primary font-bold'
                   : 'text-text-secondary hover:text-text-primary'
               }`}
             >
-              Resonansi ({userComments.length})
+              Balasan ({userComments.length})
               {activeTab === 'comments' && (
                 <span className="absolute -bottom-3 left-0 right-0 h-[2px] bg-accent"></span>
               )}
@@ -311,7 +306,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           <div className="divide-y divide-border/60 mt-4">
             {userTransmissions.length === 0 ? (
               <div className="py-16 text-center text-text-secondary/70 font-mono text-xs uppercase tracking-widest">
-                Belum ada transmisi dari sinyal ini.
+                Belum ada cerita dari pengguna ini.
               </div>
             ) : (
               userTransmissions.map((tx) => (
@@ -337,7 +332,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           <div className="divide-y divide-border/60 mt-4">
             {userComments.length === 0 ? (
               <div className="py-16 text-center text-text-secondary/70 font-mono text-xs uppercase tracking-widest">
-                Belum ada resonansi yang ditinggalkan.
+                Belum ada balasan yang ditulis.
               </div>
             ) : (
               userComments.map(({ reply, parentTx }) => (
@@ -358,7 +353,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                     <span className="text-text-secondary/70 shrink-0 text-[11px] font-mono">{reply.timestamp}</span>
                   </div>
 
-                  <div className="pl-3 border-l border-border/80 group-hover:border-accent/60 transition-colors py-0.5">
+                  <div className="pl-3 border-l border-border/80 group-hover:border-text-secondary/60 transition-colors py-0.5">
                     <p className="font-sans text-xs text-text-secondary/60 line-clamp-1 italic">
                       "{parentTx.content}"
                     </p>
@@ -369,7 +364,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   </p>
 
                   <div className="pt-0.5 flex items-center justify-between text-xs font-mono text-text-secondary/60">
-                    <span className="text-[11px] text-accent flex items-center gap-1">
+                    <span className="text-[11px] text-text-secondary/80 group-hover:text-text-primary transition-colors flex items-center gap-1">
                       Lihat percakapan utuh →
                     </span>
                   </div>

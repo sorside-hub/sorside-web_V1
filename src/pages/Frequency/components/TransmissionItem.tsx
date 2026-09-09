@@ -115,11 +115,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
         <div className="flex flex-col items-center shrink-0">
           <div
             onClick={handleAuthorClick}
-            className={`w-10 h-10 rounded-full border flex items-center justify-center cursor-pointer hover:border-accent transition-colors overflow-hidden ${
-              isMyPost
-                ? 'border-accent/80 bg-accent/5'
-                : 'border-border/90 bg-surface/80'
-            }`}
+            className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center cursor-pointer hover:border-text-secondary/70 transition-colors overflow-hidden"
           >
             {getAvatarInitials(tx.authorId, tx.authorAlias)}
           </div>
@@ -175,7 +171,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
                   type="button"
                   onClick={handleDeleteClick}
                   className="text-text-secondary/40 hover:text-red-400 transition-colors p-1 -mr-1"
-                  title="Hapus transmisi ini"
+                  title="Hapus cerita ini"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -197,7 +193,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
               type="button"
               onClick={handleReplyClick}
               className="flex items-center gap-1.5 hover:text-accent transition-colors text-[11px] p-1 -ml-1 font-mono"
-              title="Resonansi balasan"
+              title="Balasan"
             >
               <MessageSquare size={13} className="text-accent" />
               <span>{tx.replies.length}</span>
@@ -208,7 +204,7 @@ export const TransmissionItem: React.FC<TransmissionItemProps> = ({
                 type="button"
                 onClick={handleReportClick}
                 className="ml-auto text-text-secondary/40 hover:text-amber-500 transition-colors p-1"
-                title="Laporkan sinyal ini"
+                title="Laporkan cerita ini"
               >
                 <Flag size={12} />
               </button>

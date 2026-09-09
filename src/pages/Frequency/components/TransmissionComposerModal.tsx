@@ -78,7 +78,7 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
 
           <div className="flex flex-col items-center">
             <span className="font-display text-sm uppercase tracking-[0.2em] text-text-primary">
-              Transmisi Baru
+              Cerita Baru
             </span>
             <span className="font-mono text-[9px] text-text-secondary uppercase">
               // NO_LOGS_ACTIVE
