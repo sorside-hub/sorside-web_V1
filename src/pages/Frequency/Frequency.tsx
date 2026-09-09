@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, X, Search, RotateCcw } from 'lucide-react';
+import { Plus, X, Search, RotateCcw, User } from 'lucide-react';
 import { FrequencyHeader } from './components/FrequencyHeader';
 import { FrequencyMenuDrawer } from './components/FrequencyMenuDrawer';
 import { FrequencySearchDrawer } from './components/FrequencySearchDrawer';
@@ -8,6 +8,7 @@ import { TransmissionItem, Transmission, Reply } from './components/Transmission
 import { TransmissionDetailModal } from './components/TransmissionDetailModal';
 import { UserProfileView, UserProfileTarget } from './components/UserProfileView';
 import { IdentityRecoveryModal } from './components/IdentityRecoveryModal';
+import { IdentityGateModal } from './components/IdentityGateModal';
 import { ReportModal, ReportPayload } from './components/ReportModal';
 import { AvatarGenerator } from './components/AvatarGenerator';
 import { 
@@ -28,29 +29,24 @@ import {
 
 export const Frequency: React.FC = () => {
   // User Identity State (Stored in LocalStorage & Synchronized to Firestore)
+  // Tamu (Guest) tidak memiliki sorside_freq_id atau sorside_freq_key di localStorage
   const [myId, setMyId] = useState(() => {
     try {
-      let id = localStorage.getItem('sorside_freq_id');
+      const id = localStorage.getItem('sorside_freq_id');
       if (!id || id.startsWith('ss-')) {
-        id = generatePermanentId();
-        localStorage.setItem('sorside_freq_id', id);
+        return '';
       }
       return id;
     } catch {
-      return 'freq-582';
+      return '';
     }
   });
 
   const [myPasskey, setMyPasskey] = useState(() => {
     try {
-      let key = localStorage.getItem('sorside_freq_key');
-      if (!key) {
-        key = generatePasskey();
-        localStorage.setItem('sorside_freq_key', key);
-      }
-      return key;
+      return localStorage.getItem('sorside_freq_key') || '';
     } catch {
-      return 'pass-84920';
+      return '';
     }
   });
 
@@ -62,8 +58,16 @@ export const Frequency: React.FC = () => {
     }
   });
 
-  // Map of all identities in Firestore (id -> latest alias)
+  // Apakah user saat ini bertindak sebagai Tamu?
+  const isGuest = !myId || !myPasskey;
+
+  // Gate Modal State
+  const [isGateModalOpen, setIsGateModalOpen] = useState(false);
+  const [gateActionReason, setGateActionReason] = useState<string>('untuk berinteraksi di gelombang Frequency');
+
+  // Map of all identities in Firestore (id -> latest alias) & (id -> createdAt)
   const [identitiesMap, setIdentitiesMap] = useState<Record<string, string>>({});
+  const [createdDatesMap, setCreatedDatesMap] = useState<Record<string, number>>({});
 
   // Feed & Loading State (Tanpa template fallback dummy)
   const [transmissions, setTransmissions] = useState<Transmission[]>([]);
@@ -136,7 +140,21 @@ export const Frequency: React.FC = () => {
     setViewProfileTarget(target);
   };
 
+  const triggerAuthGate = (reason: string = 'untuk berinteraksi di gelombang Frequency') => {
+    setGateActionReason(reason);
+    window.history.pushState({ sorsideModal: true }, '');
+    setIsGateModalOpen(true);
+  };
+
+  const handleCloseGate = () => {
+    handleCloseModal();
+  };
+
   const openComposer = () => {
+    if (isGuest) {
+      triggerAuthGate('untuk membuat cerita baru');
+      return;
+    }
     window.history.pushState({ sorsideModal: true }, '');
     setIsComposerOpen(true);
   };
@@ -188,11 +206,16 @@ export const Frequency: React.FC = () => {
   const viewProfileTargetRef = useRef(viewProfileTarget);
   viewProfileTargetRef.current = viewProfileTarget;
 
+  const isGateModalOpenRef = useRef(isGateModalOpen);
+  isGateModalOpenRef.current = isGateModalOpen;
+
   // Check URL pathname/hash for /private-room on mount (no longer used as it's a separate route, leaving it just in case someone lands here but it does nothing now)
   
   useEffect(() => {
     const handlePopState = () => {
-      if (isTopicModalOpenRef.current) {
+      if (isGateModalOpenRef.current) {
+        setIsGateModalOpen(false);
+      } else if (isTopicModalOpenRef.current) {
         setIsTopicModalOpen(false);
       } else if (isComposerOpenRef.current) {
         setIsComposerOpen(false);
@@ -366,8 +389,9 @@ export const Frequency: React.FC = () => {
       }
     );
 
-    const unsubscribeIdentities = subscribeIdentities((map) => {
+    const unsubscribeIdentities = subscribeIdentities((map, createdMap) => {
       setIdentitiesMap(map);
+      setCreatedDatesMap(createdMap);
     });
 
     const unsubscribeOrigin = subscribeOriginIds((ids) => {
@@ -382,35 +406,47 @@ export const Frequency: React.FC = () => {
   }, []);
 
   // Initialize or load identity from localStorage & sync with Firestore
+  // HANYA JIKA user memang sudah memiliki ID tersimpan di browser sebelumnya
   useEffect(() => {
     try {
-      let id = localStorage.getItem('sorside_freq_id');
-      if (!id || id.startsWith('ss-')) {
-        id = generatePermanentId();
-        localStorage.setItem('sorside_freq_id', id);
+      const id = localStorage.getItem('sorside_freq_id');
+      const key = localStorage.getItem('sorside_freq_key');
+
+      // Jika belum ada ID atau Key, biarkan sebagai Tamu murni tanpa auto-generate
+      if (!id || !key || id.startsWith('ss-')) {
+        setMyId('');
+        setMyPasskey('');
+        return;
       }
+
       setMyId(id);
-
-      let key = localStorage.getItem('sorside_freq_key');
-      if (!key) {
-        key = generatePasskey();
-        localStorage.setItem('sorside_freq_key', key);
-      }
       setMyPasskey(key);
-
-      if (!localStorage.getItem('sorside_freq_created')) {
-        const now = new Date();
-        const formatted = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
-        localStorage.setItem('sorside_freq_created', formatted);
-      }
 
       const alias = localStorage.getItem('sorside_freq_alias') || '';
       if (alias) {
         setMyAlias(alias);
       }
 
-      // Sync identity to Firestore
-      syncIdentityToFirestore({ id, key, alias: alias || undefined });
+      // Sync identity ke Firestore jika sudah punya createdAt atau ambil dari createdDatesMap
+      const storedCreatedStr = localStorage.getItem('sorside_freq_created');
+      let createdAtTimestamp: number | undefined;
+      if (storedCreatedStr) {
+        // Coba parse DD.MM.YYYY
+        const parts = storedCreatedStr.split('.');
+        if (parts.length === 3) {
+          const d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          if (!isNaN(d.getTime())) {
+            createdAtTimestamp = d.getTime();
+          }
+        }
+      }
+
+      syncIdentityToFirestore({ 
+        id, 
+        key, 
+        alias: alias || undefined,
+        createdAt: createdAtTimestamp 
+      });
     } catch {
       // ignore storage issues
     }
@@ -563,6 +599,14 @@ export const Frequency: React.FC = () => {
   };
 
   const getAvatarInitials = (id: string, alias?: string): React.ReactNode => {
+    if (!id) {
+      return (
+        <div className="w-full h-full rounded-full bg-surface flex items-center justify-center text-text-secondary/70">
+          <User size={16} />
+        </div>
+      );
+    }
+
     if (id.toLowerCase() === 'freq-999') {
       return <span className="text-amber-400 text-lg">✦</span>;
     }
@@ -714,11 +758,13 @@ export const Frequency: React.FC = () => {
 
           <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="flex items-center gap-1.5 font-mono text-xs text-text-primary font-semibold">
-              {/* Jika punya alias tampilkan nama alias saja, ID disembunyikan */}
-              <span>{myAlias || myId}</span>
+              {/* Jika punya alias tampilkan nama alias saja, jika guest tampilkan ajakan */}
+              <span>{isGuest ? 'Masuk ke Frekuensi' : (myAlias || myId)}</span>
             </div>
             <p className="text-sm font-sans text-text-secondary/60 group-hover:text-text-secondary transition-colors truncate mt-0.5">
-              {draftContent ? `Draft: ${draftContent}` : 'Mulai bercerita...'}
+              {isGuest 
+                ? 'Klik untuk mendaftar ID anonim & mulai bercerita...' 
+                : (draftContent ? `Draft: ${draftContent}` : 'Mulai bercerita...')}
             </p>
           </div>
         </div>
@@ -847,6 +893,7 @@ export const Frequency: React.FC = () => {
               });
             }}
             originIds={originIds}
+            userCreatedDates={createdDatesMap}
           />
         </div>
       )}
@@ -874,6 +921,8 @@ export const Frequency: React.FC = () => {
             });
           }}
           originIds={originIds}
+          isGuest={isGuest}
+          onRequireAuth={triggerAuthGate}
         />
       )}
 
@@ -1024,6 +1073,24 @@ export const Frequency: React.FC = () => {
         onOpenRecoveryModal={() => {
           setIsMenuOpen(false);
           setIsRecoveryModalOpen(true);
+        }}
+        isGuest={isGuest}
+        onOpenAuthGate={() => {
+          setIsMenuOpen(false);
+          triggerAuthGate('untuk mengakses akun dan profil Anda');
+        }}
+      />
+
+      {/* MODAL GATE IDENTITAS (Tamu vs Daftar vs Pulihkan) */}
+      <IdentityGateModal
+        isOpen={isGateModalOpen}
+        onClose={handleCloseGate}
+        actionReason={gateActionReason}
+        onRegistered={(identity) => {
+          handleIdentityRecovered(identity);
+        }}
+        onContinueAsGuest={() => {
+          handleCloseGate();
         }}
       />
 

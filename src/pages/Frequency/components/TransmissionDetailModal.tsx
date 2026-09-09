@@ -16,6 +16,8 @@ interface TransmissionDetailModalProps {
   onAuthorClick?: (authorId: string, authorAlias?: string) => void;
   initialReplyTarget?: { id: string; name: string } | null;
   originIds?: string[];
+  isGuest?: boolean;
+  onRequireAuth?: (reason?: string) => void;
 }
 
 export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = ({
@@ -32,6 +34,8 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
   onAuthorClick,
   initialReplyTarget = null,
   originIds = [],
+  isGuest = false,
+  onRequireAuth,
 }) => {
   const [replyText, setReplyText] = useState('');
   const [targetReply, setTargetReply] = useState<{ id: string; name: string } | null>(initialReplyTarget);
@@ -148,6 +152,10 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isGuest) {
+      onRequireAuth?.('untuk membalas cerita ini');
+      return;
+    }
     const content = replyText.trim();
     if (!content || isSubmitting) return;
 
@@ -495,10 +503,18 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
               type="text"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
+              onFocus={() => {
+                if (isGuest) {
+                  inputRef.current?.blur();
+                  onRequireAuth?.('untuk membalas cerita ini');
+                }
+              }}
               placeholder={
-                targetReply
-                  ? `Balas @${targetReply.name}...`
-                  : `Balas sebagai ${myAlias || myId}...`
+                isGuest
+                  ? 'Masuk untuk membalas cerita ini...'
+                  : targetReply
+                    ? `Balas @${targetReply.name}...`
+                    : `Balas sebagai ${myAlias || myId}...`
               }
               maxLength={280}
               className="flex-1 bg-surface border border-border/80 px-3.5 py-2 font-sans text-xs text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent"

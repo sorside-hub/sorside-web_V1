@@ -33,6 +33,7 @@ export interface UserIdentity {
   id: string;
   key: string;
   alias?: string;
+  createdAt?: number;
 }
 
 export interface ReportItem {
@@ -89,16 +90,69 @@ export const normalizePasskey = (input: string): string => {
 export const syncIdentityToFirestore = async (identity: UserIdentity) => {
   try {
     const keyDocRef = doc(db, IDENTITIES_COLLECTION, identity.key.toLowerCase());
-    await setDoc(keyDocRef, {
+    const payload: any = {
       id: identity.id,
       key: identity.key.toLowerCase(),
       alias: identity.alias || null,
       updatedAt: serverTimestamp(),
       lastActiveAt: Date.now()
-    }, { merge: true });
+    };
+    if (identity.createdAt) {
+      payload.createdAt = identity.createdAt;
+    }
+    await setDoc(keyDocRef, payload, { merge: true });
   } catch (err) {
     console.warn('[Frequency Service] Sync identity warning:', err);
   }
+};
+
+/**
+ * Daftarkan akun baru ke Firestore dengan createdAt resmi
+ */
+export const registerNewIdentityInFirestore = async (
+  id: string, 
+  passkey: string, 
+  alias?: string
+): Promise<UserIdentity> => {
+  const normalizedKey = passkey.toLowerCase();
+  const now = Date.now();
+  const identity: UserIdentity = {
+    id,
+    key: normalizedKey,
+    alias: alias || undefined,
+    createdAt: now
+  };
+
+  const keyDocRef = doc(db, IDENTITIES_COLLECTION, normalizedKey);
+  await setDoc(keyDocRef, {
+    id,
+    key: normalizedKey,
+    alias: alias || null,
+    createdAt: now,
+    updatedAt: serverTimestamp(),
+    lastActiveAt: now
+  }, { merge: true });
+
+  return identity;
+};
+
+/**
+ * Mengambil informasi tanggal bergabung (createdAt timestamp) dari sebuah ID pengguna
+ */
+export const getIdentityCreatedAtFromFirestore = async (targetId: string): Promise<number | null> => {
+  try {
+    const q = query(collection(db, IDENTITIES_COLLECTION));
+    const querySnapshot = await getDocs(q);
+    for (const docSnap of querySnapshot.docs) {
+      const data = docSnap.data();
+      if (data.id === targetId && typeof data.createdAt === 'number') {
+        return data.createdAt;
+      }
+    }
+  } catch (err) {
+    console.warn('[Frequency Service] Failed to get identity createdAt:', err);
+  }
+  return null;
 };
 
 /**
@@ -114,6 +168,7 @@ export const ensureSpecialAccountInFirestore = async () => {
         id: 'Freq-999',
         key: specialKey,
         alias: 'sorside',
+        createdAt: 1725148800000, // 01 Sep 2024
         updatedAt: serverTimestamp(),
         lastActiveAt: Date.now()
       }, { merge: true });
@@ -123,11 +178,16 @@ export const ensureSpecialAccountInFirestore = async () => {
   }
 };
 
+export interface IdentitiesInfoMap {
+  aliases: Record<string, string>;
+  createdDates: Record<string, number>;
+}
+
 /**
- * Mendengarkan data identitas dan pemetaan alias secara real-time dari Firestore.
+ * Mendengarkan data identitas, alias, dan tanggal registrasi secara real-time dari Firestore.
  */
 export const subscribeIdentities = (
-  callback: (identitiesMap: Record<string, string>) => void
+  callback: (identitiesMap: Record<string, string>, createdDatesMap: Record<string, number>) => void
 ) => {
   try {
     ensureSpecialAccountInFirestore();
@@ -135,16 +195,25 @@ export const subscribeIdentities = (
     return onSnapshot(
       q,
       (snapshot) => {
-        const map: Record<string, string> = {
+        const aliasMap: Record<string, string> = {
           'Freq-999': 'sorside'
         };
+        const createdMap: Record<string, number> = {
+          'Freq-999': 1725148800000
+        };
+
         snapshot.docs.forEach((docSnap) => {
           const data = docSnap.data();
-          if (data.id && data.alias && typeof data.alias === 'string' && data.alias.trim()) {
-            map[data.id] = data.alias.trim();
+          if (data.id) {
+            if (data.alias && typeof data.alias === 'string' && data.alias.trim()) {
+              aliasMap[data.id] = data.alias.trim();
+            }
+            if (typeof data.createdAt === 'number') {
+              createdMap[data.id] = data.createdAt;
+            }
           }
         });
-        callback(map);
+        callback(aliasMap, createdMap);
       },
       (err) => {
         console.warn('[Frequency Service] Subscribe identities warning:', err);
@@ -182,7 +251,8 @@ export const recoverIdentityFromFirestore = async (inputKey: string): Promise<Us
     return {
       id: data.id || (normalizedKey === 'pass-281199' ? 'Freq-999' : `freq-${Math.floor(100 + Math.random() * 900)}`),
       key: data.key || normalizedKey,
-      alias: data.alias || (normalizedKey === 'pass-281199' ? 'sorside' : '')
+      alias: data.alias || (normalizedKey === 'pass-281199' ? 'sorside' : ''),
+      createdAt: typeof data.createdAt === 'number' ? data.createdAt : undefined
     };
   } catch (err) {
     if (normalizedKey === 'pass-281199') {

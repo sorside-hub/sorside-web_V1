@@ -67,8 +67,8 @@ export const TheSide: React.FC = () => {
       return matchesCategory && matchesSearch;
     })
     .sort((a, b) => {
-      const dateA = new Date(a.date).getTime();
-      const dateB = new Date(b.date).getTime();
+      const dateA = new Date(a.release_date || a.published_at || a.created_at).getTime();
+      const dateB = new Date(b.release_date || b.published_at || b.created_at).getTime();
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
 

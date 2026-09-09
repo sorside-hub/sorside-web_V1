@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ArrowLeft, Edit3, Check, MessageSquare, Plus, UserPlus, LogOut } from 'lucide-react';
 import { Transmission, TransmissionItem } from './TransmissionItem';
+import { formatJoinDate } from '../../../utils/timeAgo';
 
 export interface UserProfileTarget {
   id: string;
@@ -22,6 +23,7 @@ interface UserProfileViewProps {
   onAuthorClick: (authorId: string, authorAlias?: string) => void;
   onSelectParentTransmission?: (txId: string) => void;
   originIds?: string[];
+  userCreatedDates?: Record<string, number>;
 }
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({
@@ -38,6 +40,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   onAuthorClick,
   onSelectParentTransmission,
   originIds = [],
+  userCreatedDates = {},
 }) => {
   const [activeTab, setActiveTab] = useState<'transmissions' | 'comments'>('transmissions');
   const [isEditingAlias, setIsEditingAlias] = useState(false);
@@ -109,20 +112,42 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
     });
   });
 
-  // 3. First Signal Detected calculation
+  // 3. First Signal Detected calculation (True Join Date)
   const getFirstSignalDate = () => {
+    // A. Cek dari mapping Firestore terlebih dahulu
+    const directCreated = userCreatedDates[targetUser.id];
+    if (directCreated) {
+      return formatJoinDate(directCreated);
+    }
+
+    // B. Khusus Freq-999 (Origin Sorside)
+    if (targetUser.id === 'Freq-999') {
+      return '01.09.2024';
+    }
+
+    // C. Jika profil diri sendiri dan ada di localStorage
     if (targetUser.isMe) {
       const stored = localStorage.getItem('sorside_freq_created');
-      if (stored) return stored;
+      if (stored) return formatJoinDate(stored);
     }
-    if (userTransmissions.length > 0) {
-      const first = userTransmissions[userTransmissions.length - 1];
-      return first.timestamp || '02.09.2026';
+
+    // D. Jika ada transmisi terdahulu yang memiliki data createdAt timestamp
+    for (let i = userTransmissions.length - 1; i >= 0; i--) {
+      const tx = userTransmissions[i];
+      if ((tx as any).createdAt) {
+        return formatJoinDate((tx as any).createdAt);
+      }
     }
-    if (userComments.length > 0) {
-      return userComments[userComments.length - 1].reply.timestamp || '04.09.2026';
+
+    // E. Jika ada balasan terdahulu yang memiliki data createdAt timestamp
+    for (let i = userComments.length - 1; i >= 0; i--) {
+      const c = userComments[i];
+      if (c.reply && c.reply.createdAt) {
+        return formatJoinDate(c.reply.createdAt);
+      }
     }
-    return '04.09.2026';
+
+    return '02.09.2026';
   };
 
   const displayAvatar = getAvatarInitials(targetUser.id, targetUser.alias);

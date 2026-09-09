@@ -51,7 +51,7 @@ export const CoreRoom: React.FC = () => {
   // Real-time Firestore Data
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [blacklists, setBlacklists] = useState<BlacklistItem[]>([]);
-  const [reportFilter, setReportFilter] = useState<'all' | 'pending' | 'resolved'>('pending');
+  const [reportFilter, setReportFilter] = useState<'all' | 'pending' | 'resolved' | 'dismissed'>('pending');
 
   // Search query inside private room
   const [searchQuery, setSearchQuery] = useState('');

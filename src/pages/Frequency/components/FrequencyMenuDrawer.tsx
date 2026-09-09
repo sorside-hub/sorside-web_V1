@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, User, Info, Radio, ChevronRight, Key, Lock } from 'lucide-react';
+import { X, User, Info, Radio, ChevronRight, Key, Lock, UserCheck, LogIn } from 'lucide-react';
 
 interface FrequencyMenuDrawerProps {
   isOpen: boolean;
@@ -7,11 +7,13 @@ interface FrequencyMenuDrawerProps {
   myId: string;
   myAlias?: string;
   myPasskey?: string;
-  avatarInitials: string;
+  avatarInitials: React.ReactNode;
   onOpenProfile: () => void;
   onOpenInfo: () => void;
   onOpenRecoveryModal: () => void;
   onOpenPrivateRoom?: () => void;
+  isGuest?: boolean;
+  onOpenAuthGate?: () => void;
 }
 
 export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
@@ -25,6 +27,8 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
   onOpenInfo,
   onOpenRecoveryModal,
   onOpenPrivateRoom,
+  isGuest = false,
+  onOpenAuthGate,
 }) => {
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
@@ -91,28 +95,51 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold text-text-primary truncate text-sm">
-                {myAlias || myId}
+                {isGuest ? 'Pengunjung (Tamu)' : (myAlias || myId)}
               </div>
               <div className="font-mono text-[11px] text-text-secondary/70 flex items-center gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
-                <span>Frekuensi Aktif</span>
+                <span className={`w-1.5 h-1.5 rounded-full inline-block ${isGuest ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse'}`} />
+                <span>{isGuest ? 'Mode Baca Anonim' : 'Frekuensi Aktif'}</span>
               </div>
             </div>
           </div>
 
-          {/* Quick Info Alias/ID */}
-          {myAlias && (
-            <div className="pt-1 font-mono text-[11px] text-text-secondary/60">
-              ID: <span className="text-text-secondary font-mono">{myId}</span>
+          {/* Quick Info Alias/ID atau Tombol Masuk untuk Tamu */}
+          {isGuest ? (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAuthGate?.();
+                }}
+                className="w-full py-2 px-3 bg-text-primary hover:bg-accent text-background font-mono text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <LogIn size={13} />
+                <span>Daftar / Pulihkan ID</span>
+              </button>
             </div>
+          ) : (
+            myAlias && (
+              <div className="pt-1 font-mono text-[11px] text-text-secondary/60">
+                ID: <span className="text-text-secondary font-mono">{myId}</span>
+              </div>
+            )
           )}
         </div>
 
         {/* Menu Navigation Items */}
         <div className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-          {/* 1. Menu Profil */}
+          {/* 1. Menu Profil (Hanya untuk non-guest atau membuka gate jika guest) */}
           <button
-            onClick={onOpenProfile}
+            onClick={() => {
+              if (isGuest) {
+                onClose();
+                onOpenAuthGate?.();
+              } else {
+                onOpenProfile();
+              }
+            }}
             className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
           >
             <div className="flex items-center gap-3">
@@ -124,7 +151,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
                   Profil Saya
                 </div>
                 <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
-                  Arsip cerita, balasan, & atur alias
+                  {isGuest ? 'Aktifkan ID untuk melihat profil' : 'Arsip cerita, balasan, & atur alias'}
                 </div>
               </div>
             </div>
@@ -133,7 +160,14 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
 
           {/* 2. Menu Kunci & Pemulihan Akun */}
           <button
-            onClick={onOpenRecoveryModal}
+            onClick={() => {
+              if (isGuest) {
+                onClose();
+                onOpenAuthGate?.();
+              } else {
+                onOpenRecoveryModal();
+              }
+            }}
             className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
           >
             <div className="flex items-center gap-3">
@@ -143,12 +177,14 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
               <div>
                 <div className="text-xs font-semibold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
                   <span>Kunci & Pemulihan</span>
-                  <span className="text-[9px] font-mono px-1 py-0.2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-semibold uppercase">
-                    Aktif
-                  </span>
+                  {!isGuest && (
+                    <span className="text-[9px] font-mono px-1 py-0.2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-semibold uppercase">
+                      Aktif
+                    </span>
+                  )}
                 </div>
                 <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
-                  Salin kunci rahasia atau pulihkan ID lama
+                  {isGuest ? 'Pulihkan ID menggunakan passkey lama' : 'Salin kunci rahasia atau pulihkan ID lama'}
                 </div>
               </div>
             </div>

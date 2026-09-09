@@ -57,3 +57,38 @@ export function formatRelativeTime(rawTimestamp: any, fallback: string = 'Baru s
   const month = monthNames[date.getMonth()];
   return `${day} ${month}`;
 }
+
+/**
+ * Format tanggal bergabung yang konsisten, monokrom, dan rapi (contoh: 09.09.2026)
+ */
+export function formatJoinDate(rawTimestamp: any, fallback: string = '02.09.2026'): string {
+  if (!rawTimestamp) return fallback;
+
+  let date: Date | null = null;
+  if (typeof rawTimestamp === 'object' && typeof rawTimestamp.seconds === 'number') {
+    date = new Date(rawTimestamp.seconds * 1000);
+  } else if (rawTimestamp instanceof Date) {
+    date = rawTimestamp;
+  } else if (typeof rawTimestamp === 'number') {
+    date = new Date(rawTimestamp);
+  } else if (typeof rawTimestamp === 'string') {
+    // Jika sudah berbentuk DD.MM.YYYY
+    if (/^\d{2}\.\d{2}\.\d{4}$/.test(rawTimestamp.trim())) {
+      return rawTimestamp.trim();
+    }
+    const parsed = Date.parse(rawTimestamp);
+    if (!isNaN(parsed)) {
+      date = new Date(parsed);
+    }
+  }
+
+  if (!date || isNaN(date.getTime())) {
+    return fallback;
+  }
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+

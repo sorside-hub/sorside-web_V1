@@ -13,7 +13,7 @@ interface TransmissionComposerModalProps {
   selectedTag: string;
   onTagChange: (tag: string) => void;
   tagOptions: (string | TopicItem)[];
-  avatarInitials?: string;
+  avatarInitials?: React.ReactNode;
   isTopicModalOpen: boolean;
   onOpenTopicModal: () => void;
   onCloseTopicModal: () => void;
