@@ -1102,6 +1102,7 @@ export const Frequency: React.FC = () => {
         myPasskey={myPasskey}
         myAlias={myAlias}
         onIdentityRecovered={handleIdentityRecovered}
+        isGuest={isGuest}
       />
 
       {/* 9. DRAWER SEARCH & EKSPLORASI TOPIK (Threads Style) */}

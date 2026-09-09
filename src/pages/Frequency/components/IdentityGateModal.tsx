@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Radio, Key, UserPlus, Eye, ArrowRight, X, AlertCircle } from 'lucide-react';
+import { Radio, Key, UserPlus, ArrowRight, X, AlertCircle, Copy, Check, ShieldCheck } from 'lucide-react';
 import { recoverIdentityFromFirestore, registerNewIdentityInFirestore, UserIdentity, generatePermanentId, generatePasskey } from '../../../services/frequencyService';
 
 interface IdentityGateModalProps {
@@ -17,17 +17,21 @@ export const IdentityGateModal: React.FC<IdentityGateModalProps> = ({
   onContinueAsGuest,
   actionReason = 'untuk berinteraksi di gelombang Frequency'
 }) => {
-  const [view, setView] = useState<'choice' | 'register' | 'recover'>('choice');
+  const [view, setView] = useState<'choice' | 'register' | 'recover' | 'success'>('choice');
   const [aliasInput, setAliasInput] = useState('');
   const [recoverKeyInput, setRecoverKeyInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [createdIdentity, setCreatedIdentity] = useState<UserIdentity | null>(null);
+  const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
   const handleClose = () => {
     setView('choice');
     setErrorMsg(null);
+    setCreatedIdentity(null);
+    setCopied(false);
     onClose();
   };
 
@@ -51,13 +55,27 @@ export const IdentityGateModal: React.FC<IdentityGateModalProps> = ({
       const formattedDate = `${String(now.getDate()).padStart(2, '0')}.${String(now.getMonth() + 1).padStart(2, '0')}.${now.getFullYear()}`;
       localStorage.setItem('sorside_freq_created', formattedDate);
 
-      onRegistered(identity);
-      handleClose();
+      setCreatedIdentity(identity);
+      setView('success');
     } catch (err) {
       setErrorMsg('Gagal membuat frekuensi baru. Coba lagi beberapa saat.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFinishRegistration = () => {
+    if (createdIdentity) {
+      onRegistered(createdIdentity);
+    }
+    handleClose();
+  };
+
+  const handleCopyKey = () => {
+    if (!createdIdentity?.key) return;
+    navigator.clipboard.writeText(createdIdentity.key);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   };
 
   const handleRecoverIdentity = async (e: React.FormEvent) => {
@@ -113,7 +131,7 @@ export const IdentityGateModal: React.FC<IdentityGateModalProps> = ({
         <div className="p-4 border-b border-border/80 flex items-center justify-between bg-surface/50">
           <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-primary">
             <Radio size={15} className="text-accent" />
-            <span>Akses Frekuensi</span>
+            <span>{view === 'success' ? 'Identitas Berhasil Dibuat' : 'Akses Frekuensi'}</span>
           </div>
           <button
             type="button"
@@ -301,6 +319,83 @@ export const IdentityGateModal: React.FC<IdentityGateModalProps> = ({
                 </button>
               </div>
             </form>
+          )}
+
+          {view === 'success' && createdIdentity && (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="space-y-1 text-left">
+                <div className="flex items-center gap-2 text-emerald-500 font-mono text-xs uppercase tracking-wider font-semibold">
+                  <ShieldCheck size={16} />
+                  <span>Identitas Berhasil Diaktifkan</span>
+                </div>
+                <h3 className="font-display text-base uppercase tracking-wider text-text-primary pt-1">
+                  Selamat Datang di Frekuensi
+                </h3>
+                <p className="font-sans text-xs text-text-secondary leading-relaxed">
+                  Identitas anonim Anda telah terdaftar. Simpan passkey di bawah ini dengan aman.
+                </p>
+              </div>
+
+              {/* Identity Detail Summary Card */}
+              <div className="p-3.5 bg-background border border-border space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-text-secondary">ID Permanen:</span>
+                  <span className="text-text-primary font-bold">{createdIdentity.id}</span>
+                </div>
+                {createdIdentity.alias && (
+                  <div className="flex items-center justify-between text-xs font-mono border-t border-border/50 pt-2">
+                    <span className="text-text-secondary">Nama Alias:</span>
+                    <span className="text-accent font-semibold">{createdIdentity.alias}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Passkey Reveal & Copy Box */}
+              <div className="space-y-1.5">
+                <label className="block font-mono text-xs uppercase text-text-secondary">
+                  Kunci Rahasia (Passkey):
+                </label>
+                <div className="p-3 bg-background border border-accent/40 flex items-center justify-between gap-3">
+                  <span className="font-mono text-xs sm:text-sm font-bold tracking-widest text-accent truncate select-all">
+                    {createdIdentity.key}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyKey}
+                    className="px-2.5 py-1.5 bg-surface hover:bg-surface-hover border border-border text-xs font-mono uppercase tracking-wider text-text-primary flex items-center gap-1.5 transition-colors shrink-0"
+                  >
+                    {copied ? (
+                      <>
+                        <Check size={13} className="text-emerald-500" />
+                        <span className="text-emerald-500 font-bold">Tersalin</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={13} />
+                        <span>Salin</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Informational Guidance */}
+              <div className="p-3 border border-border bg-surface/50 text-[11px] font-sans text-text-secondary leading-relaxed">
+                💡 <span className="font-semibold text-text-primary">Info Kunci:</span> Anda dapat melihat atau menyalin passkey ini kapan saja melalui menu <span className="font-mono text-accent">Kunci & Pemulihan</span> di menu samping.
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleFinishRegistration}
+                  className="w-full py-3 bg-text-primary hover:bg-accent text-background font-mono text-xs uppercase tracking-wider font-semibold transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>Mulai Jelajahi Frekuensi</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

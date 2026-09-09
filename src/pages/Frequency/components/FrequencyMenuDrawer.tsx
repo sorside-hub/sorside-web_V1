@@ -130,43 +130,34 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
 
         {/* Menu Navigation Items */}
         <div className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-          {/* 1. Menu Profil (Hanya untuk non-guest atau membuka gate jika guest) */}
-          <button
-            onClick={() => {
-              if (isGuest) {
-                onClose();
-                onOpenAuthGate?.();
-              } else {
-                onOpenProfile();
-              }
-            }}
-            className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 border border-border bg-background text-text-secondary group-hover:text-accent group-hover:border-accent transition-colors">
-                <User size={16} />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-text-primary group-hover:text-accent transition-colors">
-                  Profil Saya
+          {/* 1. Menu Profil (Hanya untuk non-guest) */}
+          {!isGuest && (
+            <button
+              onClick={onOpenProfile}
+              className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 border border-border bg-background text-text-secondary group-hover:text-accent group-hover:border-accent transition-colors">
+                  <User size={16} />
                 </div>
-                <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
-                  {isGuest ? 'Aktifkan ID untuk melihat profil' : 'Arsip cerita, balasan, & atur alias'}
+                <div>
+                  <div className="text-xs font-semibold text-text-primary group-hover:text-accent transition-colors">
+                    Profil Saya
+                  </div>
+                  <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
+                    Arsip cerita, balasan, & atur alias
+                  </div>
                 </div>
               </div>
-            </div>
-            <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary group-hover:translate-x-0.5 transition-all" />
-          </button>
+              <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary group-hover:translate-x-0.5 transition-all" />
+            </button>
+          )}
 
           {/* 2. Menu Kunci & Pemulihan Akun */}
           <button
             onClick={() => {
-              if (isGuest) {
-                onClose();
-                onOpenAuthGate?.();
-              } else {
-                onOpenRecoveryModal();
-              }
+              onClose();
+              onOpenRecoveryModal();
             }}
             className="w-full p-3.5 flex items-center justify-between text-left group hover:bg-surface border border-transparent hover:border-border/80 transition-all"
           >
@@ -176,7 +167,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
               </div>
               <div>
                 <div className="text-xs font-semibold text-text-primary group-hover:text-accent transition-colors flex items-center gap-1.5">
-                  <span>Kunci & Pemulihan</span>
+                  <span>{isGuest ? 'Pulihkan Akun' : 'Kunci & Pemulihan'}</span>
                   {!isGuest && (
                     <span className="text-[9px] font-mono px-1 py-0.2 bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 font-semibold uppercase">
                       Aktif
@@ -184,7 +175,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
                   )}
                 </div>
                 <div className="text-[11px] text-text-secondary/70 font-sans mt-0.5">
-                  {isGuest ? 'Pulihkan ID menggunakan passkey lama' : 'Salin kunci rahasia atau pulihkan ID lama'}
+                  {isGuest ? 'Masukkan passkey untuk mengembalikan ID lama' : 'Salin kunci rahasia atau pulihkan ID lama'}
                 </div>
               </div>
             </div>

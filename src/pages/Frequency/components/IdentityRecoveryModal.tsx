@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Key, Copy, Check, ShieldCheck, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { recoverIdentityFromFirestore, UserIdentity } from '../../../services/frequencyService';
 
@@ -9,6 +9,7 @@ interface IdentityRecoveryModalProps {
   myPasskey: string;
   myAlias?: string;
   onIdentityRecovered: (recovered: UserIdentity) => void;
+  isGuest?: boolean;
 }
 
 export const IdentityRecoveryModal: React.FC<IdentityRecoveryModalProps> = ({
@@ -18,13 +19,20 @@ export const IdentityRecoveryModal: React.FC<IdentityRecoveryModalProps> = ({
   myPasskey,
   myAlias,
   onIdentityRecovered,
+  isGuest = false,
 }) => {
-  const [activeTab, setActiveTab] = useState<'myKey' | 'recover'>('myKey');
+  const [activeTab, setActiveTab] = useState<'myKey' | 'recover'>(() => (isGuest ? 'recover' : 'myKey'));
   const [copied, setCopied] = useState(false);
   const [inputKey, setInputKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isGuest) {
+      setActiveTab('recover');
+    }
+  }, [isGuest, isOpen]);
 
   if (!isOpen) return null;
 
@@ -77,7 +85,7 @@ export const IdentityRecoveryModal: React.FC<IdentityRecoveryModalProps> = ({
         <div className="p-3.5 border-b border-border/80 flex items-center justify-between bg-surface/40">
           <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-primary">
             <Key size={15} className="text-accent" />
-            <span>Kunci & Pemulihan Akun</span>
+            <span>{isGuest ? 'Pulihkan Akun' : 'Kunci & Pemulihan Akun'}</span>
           </div>
 
           <button
@@ -89,39 +97,41 @@ export const IdentityRecoveryModal: React.FC<IdentityRecoveryModalProps> = ({
           </button>
         </div>
 
-        {/* TAB TOGGLE */}
-        <div className="grid grid-cols-2 border-b border-border font-mono text-xs text-center bg-surface/20">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('myKey');
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
-            className={`py-2.5 transition-colors border-b-2 -mb-[1px] uppercase tracking-wider ${
-              activeTab === 'myKey'
-                ? 'border-accent text-accent font-bold bg-surface/40'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            Kunci Saya
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('recover');
-              setErrorMsg(null);
-              setSuccessMsg(null);
-            }}
-            className={`py-2.5 transition-colors border-b-2 -mb-[1px] uppercase tracking-wider ${
-              activeTab === 'recover'
-                ? 'border-accent text-accent font-bold bg-surface/40'
-                : 'border-transparent text-text-secondary hover:text-text-primary'
-            }`}
-          >
-            Pulihkan Akun
-          </button>
-        </div>
+        {/* TAB TOGGLE (Hanya tampil untuk non-guest) */}
+        {!isGuest && (
+          <div className="grid grid-cols-2 border-b border-border font-mono text-xs text-center bg-surface/20">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('myKey');
+                setErrorMsg(null);
+                setSuccessMsg(null);
+              }}
+              className={`py-2.5 transition-colors border-b-2 -mb-[1px] uppercase tracking-wider ${
+                activeTab === 'myKey'
+                  ? 'border-accent text-accent font-bold bg-surface/40'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Kunci Saya
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('recover');
+                setErrorMsg(null);
+                setSuccessMsg(null);
+              }}
+              className={`py-2.5 transition-colors border-b-2 -mb-[1px] uppercase tracking-wider ${
+                activeTab === 'recover'
+                  ? 'border-accent text-accent font-bold bg-surface/40'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Pulihkan Akun
+            </button>
+          </div>
+        )}
 
         {/* CONTENT */}
         <div className="p-5 space-y-4">

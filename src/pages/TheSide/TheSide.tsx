@@ -204,7 +204,7 @@ export const TheSide: React.FC = () => {
           </div>
         ) : filteredArticles.length === 0 ? (
           <div className="py-12 text-center text-xs font-mono text-text-secondary uppercase tracking-widest">
-            No records found.
+            {allArticles.length === 0 ? 'Coming soon.' : 'No records found.'}
           </div>
         ) : (
           filteredArticles.map((article) => {

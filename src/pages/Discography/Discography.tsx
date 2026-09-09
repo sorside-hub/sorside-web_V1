@@ -94,7 +94,7 @@ export const Discography: React.FC = () => {
       <div className="space-y-0">
         {filteredReleases.length === 0 ? (
           <div className="py-16 text-center text-xs font-mono text-text-secondary uppercase tracking-widest">
-            No releases match your query.
+            {allReleases.length === 0 ? 'Coming soon.' : 'No releases match your query.'}
           </div>
         ) : (
           filteredReleases.map((release, index) => (
