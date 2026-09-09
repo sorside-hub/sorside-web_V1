@@ -14,13 +14,14 @@ interface UserProfileViewProps {
   myId: string;
   myAlias?: string;
   allTransmissions: Transmission[];
-  getAvatarInitials: (id: string, alias?: string) => string;
+  getAvatarInitials: (id: string, alias?: string) => React.ReactNode;
   onUpdateAlias?: (newAlias: string) => void;
   onDeleteTransmission: (id: string) => void;
   onOpenTransmissionDetail: (tx: Transmission) => void;
   onOpenComposer: () => void;
   onAuthorClick: (authorId: string, authorAlias?: string) => void;
   onSelectParentTransmission?: (txId: string) => void;
+  originIds?: string[];
 }
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({
@@ -36,6 +37,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
   onOpenComposer,
   onAuthorClick,
   onSelectParentTransmission,
+  originIds = [],
 }) => {
   const [activeTab, setActiveTab] = useState<'transmissions' | 'comments'>('transmissions');
   const [isEditingAlias, setIsEditingAlias] = useState(false);
@@ -133,9 +135,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
       onTouchEnd={handleTouchEnd}
       className="min-h-screen bg-background text-text-primary pb-24 animate-in fade-in duration-150"
     >
-      {/* 1. TOP BAR NAVIGASI (Sticky Minimalis) */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border/80 px-4 py-3 mb-6">
-        <div className="max-w-xl mx-auto relative flex items-center justify-between min-h-[40px]">
+      {/* 1. TOP BAR NAVIGASI (Hidden di Mobile, Back saja di Desktop) */}
+      <div className="hidden sm:block sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border/80 px-4 py-3 mb-6">
+        <div className="max-w-xl mx-auto flex items-center justify-start min-h-[40px]">
           {/* Tombol Back Kiri */}
           <button
             onClick={handleBack}
@@ -144,42 +146,30 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
           >
             <ArrowLeft size={18} />
           </button>
-
-          {/* Judul Center Presisi Sempurna */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-text-secondary font-medium">
-              {targetUser.isMe ? 'PROFIL ANDA' : 'SINYAL PENGUNJUNG'}
-            </span>
-          </div>
-
-          {targetUser.isMe ? (
-            <button
-              onClick={onOpenComposer}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-text-primary text-background shadow-md hover:opacity-90 hover:scale-105 active:scale-95 transition-all z-10 border border-border/30"
-              aria-label="Pancarkan Sinyal Baru"
-              title="Pancarkan Sinyal Baru"
-            >
-              <Plus size={18} strokeWidth={2.2} />
-            </button>
-          ) : (
-            <div className="w-10 h-10" />
-          )}
         </div>
       </div>
 
-      <div className="max-w-xl mx-auto px-4 sm:px-0 space-y-6">
+      <div className="max-w-xl mx-auto px-4 sm:px-0 sm:mt-0 mt-6">
         {/* 2. KARTU IDENTITAS FREKUENSI */}
         <div className="border-b border-border/70 pb-6 space-y-4">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center font-mono text-base font-bold text-text-primary tracking-tighter shrink-0">
+            <div className="w-14 h-14 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center shrink-0 overflow-hidden">
               {displayAvatar}
             </div>
 
             <div className="flex-1 min-w-0 space-y-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="font-mono text-base sm:text-lg font-bold text-text-primary truncate">
                   {displayName}
                 </h1>
+                {(originIds.includes(targetUser.id) || targetUser.id === 'Freq-999') && (
+                  <span 
+                    className="text-amber-400 text-sm font-bold leading-none inline-flex items-center shrink-0 select-none ml-0.5"
+                    title="Origin Creator"
+                  >
+                    ✦
+                  </span>
+                )}
                 {targetUser.isMe && (
                   <span className="font-mono text-[10px] text-accent border border-accent/60 px-1 py-0.2 uppercase shrink-0">
                     Anda
@@ -272,35 +262,53 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
         </div>
 
         {/* 3. TAB NAVIGASI ARSIP (Transmisi vs Resonansi) */}
-        <div className="flex justify-center border-b border-border/70 font-mono text-xs">
-          <div className="flex items-center gap-8">
+        <div className="flex items-center border-b border-border/70 font-mono text-xs overflow-x-auto hide-scrollbar mt-3">
+          {targetUser.isMe && (
+            <div className="pb-3 pr-6 shrink-0">
+              <button
+                onClick={onOpenComposer}
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-text-primary text-background hover:bg-accent transition-colors shadow-sm"
+                aria-label="Pancarkan Sinyal Baru"
+                title="Pancarkan Sinyal Baru"
+              >
+                <Plus size={14} strokeWidth={2.5} />
+              </button>
+            </div>
+          )}
+          <div className="flex items-center gap-8 justify-center sm:justify-start min-w-max w-full sm:w-auto pb-3">
             <button
               onClick={() => setActiveTab('transmissions')}
-              className={`pb-3 px-2 uppercase tracking-wider transition-colors border-b-2 -mb-[1px] ${
+              className={`px-2 uppercase tracking-wider transition-colors relative ${
                 activeTab === 'transmissions'
-                  ? 'border-accent text-accent font-bold'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  ? 'text-accent font-bold'
+                  : 'text-text-secondary hover:text-text-primary'
               }`}
             >
               Transmisi ({userTransmissions.length})
+              {activeTab === 'transmissions' && (
+                <span className="absolute -bottom-3 left-0 right-0 h-[2px] bg-accent"></span>
+              )}
             </button>
 
             <button
               onClick={() => setActiveTab('comments')}
-              className={`pb-3 px-2 uppercase tracking-wider transition-colors border-b-2 -mb-[1px] ${
+              className={`px-2 uppercase tracking-wider transition-colors relative ${
                 activeTab === 'comments'
-                  ? 'border-accent text-accent font-bold'
-                  : 'border-transparent text-text-secondary hover:text-text-primary'
+                  ? 'text-accent font-bold'
+                  : 'text-text-secondary hover:text-text-primary'
               }`}
             >
               Resonansi ({userComments.length})
+              {activeTab === 'comments' && (
+                <span className="absolute -bottom-3 left-0 right-0 h-[2px] bg-accent"></span>
+              )}
             </button>
           </div>
         </div>
 
         {/* 4. KONTEN TAB: TRANSMISI */}
         {activeTab === 'transmissions' && (
-          <div className="divide-y divide-border/60">
+          <div className="divide-y divide-border/60 mt-4">
             {userTransmissions.length === 0 ? (
               <div className="py-16 text-center text-text-secondary/70 font-mono text-xs uppercase tracking-widest">
                 Belum ada transmisi dari sinyal ini.
@@ -317,6 +325,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                   onQuickReply={() => onOpenTransmissionDetail(tx)}
                   onDeleteTransmission={onDeleteTransmission}
                   onAuthorClick={onAuthorClick}
+                  originIds={originIds}
                 />
               ))
             )}
@@ -325,7 +334,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
 
         {/* 5. KONTEN TAB: RESONANSI */}
         {activeTab === 'comments' && (
-          <div className="divide-y divide-border/60">
+          <div className="divide-y divide-border/60 mt-4">
             {userComments.length === 0 ? (
               <div className="py-16 text-center text-text-secondary/70 font-mono text-xs uppercase tracking-widest">
                 Belum ada resonansi yang ditinggalkan.

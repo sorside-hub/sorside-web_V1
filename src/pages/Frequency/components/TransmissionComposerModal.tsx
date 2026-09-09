@@ -152,7 +152,7 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
             onChange={(e) => onDraftChange(e.target.value)}
             placeholder="Tuliskan apa yang sedang melintas di pikiranmu... tanpa jejak identitas, tanpa penghakiman."
             rows={7}
-            maxLength={1000}
+            maxLength={2000}
             className="w-full bg-transparent font-sans text-base text-text-primary placeholder:text-text-secondary/40 focus:outline-none resize-none leading-relaxed"
           />
         </div>
@@ -160,7 +160,7 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
         {/* BOTTOM CONTROLS: HANYA COUNTER KARAKTER */}
         <div className="border-t border-border/80 px-4 py-2 bg-surface/30 flex justify-end shrink-0">
           <span className="font-mono text-xs text-text-secondary">
-            {draftContent.length}/1000
+            {draftContent.length}/2000
           </span>
         </div>
 

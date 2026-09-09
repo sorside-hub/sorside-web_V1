@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { X, User, Info, Radio, ChevronRight, Key } from 'lucide-react';
+import { X, User, Info, Radio, ChevronRight, Key, Lock } from 'lucide-react';
 
 interface FrequencyMenuDrawerProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface FrequencyMenuDrawerProps {
   onOpenProfile: () => void;
   onOpenInfo: () => void;
   onOpenRecoveryModal: () => void;
+  onOpenPrivateRoom?: () => void;
 }
 
 export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
@@ -23,6 +24,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
   onOpenProfile,
   onOpenInfo,
   onOpenRecoveryModal,
+  onOpenPrivateRoom,
 }) => {
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
@@ -84,7 +86,7 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
         {/* User Mini Profile Card */}
         <div className="p-5 border-b border-border/70 bg-surface/50 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full border border-border/90 bg-surface flex items-center justify-center font-mono text-xs text-text-primary font-bold shrink-0 tracking-tighter shadow-sm">
+            <div className="w-11 h-11 rounded-full border border-border/90 bg-surface flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
               {avatarInitials}
             </div>
             <div className="flex-1 min-w-0">
@@ -173,6 +175,32 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
             </div>
             <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary group-hover:translate-x-0.5 transition-all" />
           </button>
+
+          {/* 4. Menu Ruang Privat / Control Room */}
+          {onOpenPrivateRoom && (
+            <button
+              onClick={onOpenPrivateRoom}
+              className="w-full p-3.5 flex items-center justify-between text-left group bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 transition-all rounded mt-2"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 border border-amber-500/30 bg-amber-500/10 text-amber-400 group-hover:border-amber-500 transition-colors rounded">
+                  <Lock size={16} />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-amber-400 group-hover:text-amber-300 transition-colors flex items-center gap-1">
+                    <span>Ruang Privat</span>
+                    <span className="text-[9px] font-mono px-1 py-0.2 bg-amber-500/20 text-amber-400 font-bold tracking-widest uppercase">
+                      /private-room
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-text-secondary/80 font-sans mt-0.5">
+                    Moderasi laporan & status Origin
+                  </div>
+                </div>
+              </div>
+              <ChevronRight size={14} className="text-amber-400/60 group-hover:text-amber-300 group-hover:translate-x-0.5 transition-all" />
+            </button>
+          )}
         </div>
 
         {/* Footer */}

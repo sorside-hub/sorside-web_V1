@@ -2,32 +2,27 @@ import React from 'react';
 import { HomeHero } from './components/HomeHero';
 import { LoneTransmissionCard } from './components/LoneTransmissionCard';
 import { ThoughtFragments } from './components/ThoughtFragments';
-import { SanctuaryManifesto } from './components/SanctuaryManifesto';
-import { AtmosphereArtifacts } from './components/AtmosphereArtifacts';
+import { RandomFrequencyCard } from './components/RandomFrequencyCard';
 
 export const Home: React.FC = () => {
   return (
     <div className="space-y-12 pb-16">
-      {/* 1. The Monologue & Frequency Header */}
+      {/* 1. Header Hero */}
       <HomeHero />
 
-      {/* 2. The Lone Transmission from Bedroom */}
+      {/* 2. Release Update */}
       <LoneTransmissionCard />
 
-      {/* 3. Fragmen Pikiran dari "The Side" */}
+      {/* 3. The Side Update */}
       <ThoughtFragments />
 
-      {/* 4. Ruang Diri Sendiri / Personal Manifesto */}
-      <SanctuaryManifesto />
+      {/* 4. Cerita Random dari Frequency */}
+      <RandomFrequencyCard />
 
-      {/* 5. Artifak Visual & Suasana */}
-      <AtmosphereArtifacts />
-
-      {/* Subtle Closure */}
+      {/* Minimalist Footer */}
       <footer className="pt-8 border-t border-border/40 text-center font-mono text-[10px] text-text-secondary tracking-widest uppercase">
-        SORSIDE // ARCHIVED FROM THE BEDROOM // NO PRETEXTS
+        SORSIDE // RELEASES • ESSAYS • ANONYMOUS FREQUENCY
       </footer>
     </div>
   );
 };
-

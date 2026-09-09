@@ -8,12 +8,18 @@ import { TransmissionItem, Transmission, Reply } from './components/Transmission
 import { TransmissionDetailModal } from './components/TransmissionDetailModal';
 import { UserProfileView, UserProfileTarget } from './components/UserProfileView';
 import { IdentityRecoveryModal } from './components/IdentityRecoveryModal';
+import { ReportModal, ReportPayload } from './components/ReportModal';
+import { PrivateRoomModal } from './components/PrivateRoomModal';
+import { AvatarGenerator } from './components/AvatarGenerator';
 import { 
   subscribeTransmissions, 
   subscribeIdentities,
+  subscribeOriginIds,
   createTransmissionToFirestore, 
   addReplyToFirestore, 
   deleteTransmissionFromFirestore,
+  deleteReplyFromFirestore,
+  createReportInFirestore,
   generatePermanentId,
   generatePasskey,
   syncIdentityToFirestore,
@@ -67,8 +73,23 @@ export const Frequency: React.FC = () => {
   // In-app Delete Confirmation State (Menggantikan window.confirm yang diblokir iframe)
   const [txToDelete, setTxToDelete] = useState<string | null>(null);
 
+  // Report Target State (Poin 1 & 2)
+  const [reportTarget, setReportTarget] = useState<{
+    targetType: 'transmission' | 'reply';
+    targetId: string;
+    transmissionId: string;
+    targetAuthorId: string;
+    targetAuthorAlias?: string;
+    targetContent: string;
+  } | null>(null);
+
+  // Origin IDs ("✦ sorside" Badge) & Private Room Modal State
+  const [originIds, setOriginIds] = useState<string[]>([]);
+  const [isPrivateRoomOpen, setIsPrivateRoomOpen] = useState(false);
+
   // Modals state
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [infoActiveTab, setInfoActiveTab] = useState<'about' | 'rules'>('about');
   const [viewProfileTarget, setViewProfileTarget] = useState<UserProfileTarget | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
@@ -127,6 +148,11 @@ export const Frequency: React.FC = () => {
     setIsTopicModalOpen(true);
   };
 
+  const openPrivateRoom = () => {
+    window.history.pushState({ sorsideModal: true }, '');
+    setIsPrivateRoomOpen(true);
+  };
+
   const openDetail = (tx: Transmission, targetReplyUser?: { id: string; name: string }) => {
     window.history.pushState({ sorsideModal: true }, '');
     setSelectedTransmission(tx);
@@ -169,9 +195,25 @@ export const Frequency: React.FC = () => {
   const viewProfileTargetRef = useRef(viewProfileTarget);
   viewProfileTargetRef.current = viewProfileTarget;
 
+  const isPrivateRoomOpenRef = useRef(isPrivateRoomOpen);
+  isPrivateRoomOpenRef.current = isPrivateRoomOpen;
+
+  // Check URL pathname/hash for /private-room on mount
+  useEffect(() => {
+    if (
+      window.location.pathname.includes('/private-room') || 
+      window.location.hash.includes('private-room') ||
+      window.location.search.includes('private-room')
+    ) {
+      setIsPrivateRoomOpen(true);
+    }
+  }, []);
+
   useEffect(() => {
     const handlePopState = () => {
-      if (isTopicModalOpenRef.current) {
+      if (isPrivateRoomOpenRef.current) {
+        setIsPrivateRoomOpen(false);
+      } else if (isTopicModalOpenRef.current) {
         setIsTopicModalOpen(false);
       } else if (isComposerOpenRef.current) {
         setIsComposerOpen(false);
@@ -307,23 +349,24 @@ export const Frequency: React.FC = () => {
       replies: []
     };
 
-    // Optimistic UI update
-    setTransmissions(prev => [newTx, ...prev]);
-    setDraftContent('');
-    try {
-      localStorage.removeItem('sorside_freq_draft');
-    } catch {
-      // ignore
-    }
-
-    // Close composer modal
-    handleCloseModal();
-
-    // Push to Firestore
+    // Push to Firestore first / enforce rules
     try {
       await createTransmissionToFirestore(newTx);
-    } catch (err) {
-      console.warn('[Frequency] Gagal kirim ke Firestore, tetap ada di lokal:', err);
+
+      // Optimistic UI update & clear draft (deduplicate if already in prev)
+      setTransmissions(prev => [newTx, ...prev.filter(t => t.id !== newTx.id)]);
+      setDraftContent('');
+      try {
+        localStorage.removeItem('sorside_freq_draft');
+      } catch {
+        // ignore
+      }
+
+      // Close composer modal
+      handleCloseModal();
+    } catch (err: any) {
+      console.warn('[Frequency] Validation/Firestore error:', err);
+      alert(err.message || 'Gagal memancarkan sinyal.');
     }
   };
 
@@ -348,9 +391,14 @@ export const Frequency: React.FC = () => {
       setIdentitiesMap(map);
     });
 
+    const unsubscribeOrigin = subscribeOriginIds((ids) => {
+      setOriginIds(ids || []);
+    });
+
     return () => {
       unsubscribeTransmissions();
       unsubscribeIdentities();
+      unsubscribeOrigin();
     };
   }, []);
 
@@ -446,38 +494,75 @@ export const Frequency: React.FC = () => {
       replyToName: replyTo?.name
     };
 
-    // Optimistic UI update
-    setTransmissions(prev =>
-      prev.map(tx => {
-        if (tx.id === txId) {
-          return {
-            ...tx,
-            replies: [...tx.replies, newReply]
-          };
-        }
-        return tx;
-      })
-    );
-
-    // Update active modal view
-    setSelectedTransmission(prev => {
-      if (!prev || prev.id !== txId) return prev;
-      return {
-        ...prev,
-        replies: [...prev.replies, newReply]
-      };
-    });
-
-    // Push reply to Firestore
     try {
+      // Enforce rules in Firestore first
       await addReplyToFirestore(txId, newReply);
-    } catch (err) {
-      console.warn('[Frequency] Gagal kirim balasan ke Firestore, tetap ada di lokal:', err);
+
+      // Optimistic UI update
+      setTransmissions(prev =>
+        prev.map(tx => {
+          if (tx.id === txId) {
+            return {
+              ...tx,
+              replies: [...tx.replies, newReply]
+            };
+          }
+          return tx;
+        })
+      );
+
+      // Update active modal view
+      setSelectedTransmission(prev => {
+        if (!prev || prev.id !== txId) return prev;
+        return {
+          ...prev,
+          replies: [...prev.replies, newReply]
+        };
+      });
+    } catch (err: any) {
+      console.warn('[Frequency] Reply error:', err);
+      alert(err.message || 'Gagal mengirimkan balasan.');
     }
   };
 
   const handleDeleteMyTx = (id: string) => {
     setTxToDelete(id);
+  };
+
+  const handleDeleteReply = async (txId: string, replyId: string) => {
+    if (confirm('Yakin ingin menghapus balasan ini?')) {
+      try {
+        await deleteReplyFromFirestore(txId, replyId);
+      } catch (err) {
+        console.error('Failed to delete reply:', err);
+      }
+    }
+  };
+
+  const handleOpenReportTransmission = (tx: Transmission) => {
+    setReportTarget({
+      targetType: 'transmission',
+      targetId: tx.id,
+      transmissionId: tx.id,
+      targetAuthorId: tx.authorId,
+      targetAuthorAlias: tx.authorAlias,
+      targetContent: tx.content,
+    });
+  };
+
+  const handleOpenReportReply = (txId: string, reply: Reply) => {
+    setReportTarget({
+      targetType: 'reply',
+      targetId: reply.id,
+      transmissionId: txId,
+      targetAuthorId: reply.authorId,
+      targetAuthorAlias: reply.authorAlias,
+      targetContent: reply.content,
+    });
+  };
+
+  const handleSubmitReport = async (payload: ReportPayload) => {
+    await createReportInFirestore(payload);
   };
 
   const handleConfirmDelete = async () => {
@@ -498,21 +583,16 @@ export const Frequency: React.FC = () => {
     }
   };
 
-  const getAvatarInitials = (id: string, alias?: string) => {
-    if (alias && alias.trim()) {
-      const parts = alias.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-      }
-      return alias.slice(0, 2).toUpperCase();
+  const getAvatarInitials = (id: string, alias?: string): React.ReactNode => {
+    if (id.toLowerCase() === 'freq-999') {
+      return <span className="text-amber-400 text-lg">✦</span>;
     }
-    if (id.startsWith('freq-')) {
-      return id.slice(5);
-    }
-    if (id.startsWith('ss-')) {
-      return id.slice(3);
-    }
-    return id.slice(0, 3).toUpperCase();
+
+    return (
+      <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+        <AvatarGenerator seed={id} />
+      </div>
+    );
   };
 
   // Buka detail post mandiri saat kartu atau tombol balas diklik
@@ -521,14 +601,23 @@ export const Frequency: React.FC = () => {
     setInitialReplyTarget(targetReplyUser || null);
   };
 
-  // Transmisi dengan mapping alias dinamis real-time
+  // Transmisi dengan mapping alias dinamis real-time & garansi ID unik (no duplicate key error)
   const syncedTransmissions = React.useMemo(() => {
-    return transmissions.map((tx) => {
+    const map = new Map<string, Transmission>();
+
+    for (const tx of transmissions) {
+      if (!tx || !tx.id || map.has(tx.id)) continue;
+
       const currentAuthorAlias = (tx.authorId === myId && myAlias)
         ? myAlias
         : (identitiesMap[tx.authorId] !== undefined ? identitiesMap[tx.authorId] : tx.authorAlias);
 
-      const updatedReplies = (tx.replies || []).map((r) => {
+      const seenReplyIds = new Set<string>();
+      const updatedReplies = (tx.replies || []).filter(r => {
+        if (!r || !r.id || seenReplyIds.has(r.id)) return false;
+        seenReplyIds.add(r.id);
+        return true;
+      }).map((r) => {
         const currentReplyAlias = (r.authorId === myId && myAlias)
           ? myAlias
           : (identitiesMap[r.authorId] !== undefined ? identitiesMap[r.authorId] : r.authorAlias);
@@ -538,12 +627,14 @@ export const Frequency: React.FC = () => {
         };
       });
 
-      return {
+      map.set(tx.id, {
         ...tx,
         authorAlias: currentAuthorAlias || undefined,
         replies: updatedReplies
-      };
-    });
+      });
+    }
+
+    return Array.from(map.values());
   }, [transmissions, identitiesMap, myId, myAlias]);
 
   // Transmisi aktif terpilih untuk modal detail (tersinkronisasi aliasnya)
@@ -638,7 +729,7 @@ export const Frequency: React.FC = () => {
           onClick={openComposer}
           className="pb-3.5 pt-0 mb-4 border-b border-border/70 cursor-pointer transition-colors flex items-center gap-3.5 select-none group hover:border-border"
         >
-          <div className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center font-mono text-xs text-text-primary font-bold shrink-0 tracking-tighter group-hover:border-accent/80 transition-colors">
+          <div className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center shrink-0 group-hover:border-accent/80 transition-colors overflow-hidden">
             {getAvatarInitials(myId, myAlias)}
           </div>
 
@@ -720,6 +811,7 @@ export const Frequency: React.FC = () => {
               onOpenDetail={openDetail}
               onQuickReply={(targetTx) => openDetail(targetTx)}
               onDeleteTransmission={handleDeleteMyTx}
+              onReportTransmission={handleOpenReportTransmission}
               onTopicClick={(topic) => {
                 setSearchQuery(topic);
                 setIsSearchOpen(true);
@@ -731,6 +823,7 @@ export const Frequency: React.FC = () => {
                   isMe: authorId === myId
                 });
               }}
+              originIds={originIds}
             />
           ))
         )}
@@ -774,6 +867,7 @@ export const Frequency: React.FC = () => {
                 isMe: authorId === myId
               });
             }}
+            originIds={originIds}
           />
         </div>
       )}
@@ -788,6 +882,9 @@ export const Frequency: React.FC = () => {
           getAvatarInitials={getAvatarInitials}
           onSubmitReply={handleSubmitReply}
           onDeleteTransmission={handleDeleteMyTx}
+          onDeleteReply={handleDeleteReply}
+          onReportTransmission={handleOpenReportTransmission}
+          onReportReply={handleOpenReportReply}
           initialReplyTarget={initialReplyTarget}
           onAuthorClick={(authorId, authorAlias) => {
             setSelectedTransmission(null);
@@ -797,58 +894,138 @@ export const Frequency: React.FC = () => {
               isMe: authorId === myId
             });
           }}
+          originIds={originIds}
         />
       )}
 
-      {/* 7. MODAL INFO / ABOUT FREQUENCY */}
+      {/* 7. MODAL INFO / ABOUT & ATURAN FREQUENCY */}
       {showInfoModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-200"
           onClick={handleCloseModal}
         >
           <div 
-            className="w-full max-w-md border border-border bg-surface p-6 sm:p-7 space-y-5 shadow-2xl"
+            className="w-full max-w-md border border-border bg-surface p-6 sm:p-7 space-y-5 shadow-2xl max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-border/60 pb-4">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-border/60 pb-4 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-accent rounded-full" />
+                <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
                 <h3 className="font-display text-xl uppercase tracking-widest text-text-primary">
-                  Tentang Frequency
+                  Protocol & Informasi
                 </h3>
               </div>
               <button 
                 onClick={handleCloseModal}
                 className="p-1 border border-border text-text-secondary hover:text-text-primary transition-colors"
+                aria-label="Tutup Modal"
               >
                 <X size={15} />
               </button>
             </div>
 
-            <div className="space-y-4 font-sans text-xs text-text-secondary leading-relaxed">
-              <p>
-                <strong className="text-text-primary font-mono">// 100% PSEUDONYMOUS & BEBAS</strong>
-                <br />
-                Frequency adalah ruang gema dua arah tempat siapapun bisa menuliskan sisi hidup yang jarang atau bahkan tidak pernah terlihat oleh dunia luar.
-              </p>
-              <p>
-                <strong className="text-text-primary font-mono">// TANPA LOGIN & TANPA DATA PRIBADI</strong>
-                <br />
-                Identitas sinyal Anda (<code className="text-accent font-mono">{myId}</code>) digenerate secara acak dan hanya tinggal di dalam peramban perangkat Anda.
-              </p>
-              <p>
-                <strong className="text-text-primary font-mono">// RESONANSI (DUA ARAH)</strong>
-                <br />
-                Anda bisa membaca, membalas, dan merespons cerita pengunjung lain secara leluasa.
-              </p>
+            {/* Tab Navigation */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-background border border-border text-xs font-mono shrink-0">
+              <button
+                type="button"
+                onClick={() => setInfoActiveTab('about')}
+                className={`py-2 text-center uppercase tracking-wider transition-all font-semibold ${
+                  infoActiveTab === 'about'
+                    ? 'bg-surface text-text-primary border border-border shadow-sm'
+                    : 'text-text-secondary/70 hover:text-text-primary'
+                }`}
+              >
+                Tentang Ruang
+              </button>
+              <button
+                type="button"
+                onClick={() => setInfoActiveTab('rules')}
+                className={`py-2 text-center uppercase tracking-wider transition-all font-semibold flex items-center justify-center gap-1.5 ${
+                  infoActiveTab === 'rules'
+                    ? 'bg-surface text-accent border border-accent/40 shadow-sm'
+                    : 'text-text-secondary/70 hover:text-text-primary'
+                }`}
+              >
+                <span>Aturan Sinyal</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+              </button>
             </div>
 
-            <div className="pt-2 border-t border-border/40">
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto space-y-4 font-sans text-xs text-text-secondary leading-relaxed pr-1">
+              {infoActiveTab === 'about' ? (
+                <div className="space-y-4">
+                  <p>
+                    <strong className="text-text-primary font-mono block mb-1">// 100% PSEUDONYMOUS & BEBAS</strong>
+                    Frequency adalah ruang gema dua arah tempat siapapun bisa menuliskan sisi hidup yang jarang atau bahkan tidak pernah terlihat oleh dunia luar.
+                  </p>
+                  <p>
+                    <strong className="text-text-primary font-mono block mb-1">// TANPA LOGIN & TANPA DATA PRIBADI</strong>
+                    Identitas sinyal Anda (<code className="text-accent font-mono">{myId}</code>) digenerate secara acak dan hanya tinggal di dalam peramban perangkat Anda.
+                  </p>
+                  <p>
+                    <strong className="text-text-primary font-mono block mb-1">// RESONANSI (DUA ARAH)</strong>
+                    Anda bisa membaca, membalas, dan merespons cerita pengunjung lain secara leluasa.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3.5">
+                  <div className="p-3 border border-border/70 bg-background/50 space-y-1">
+                    <div className="font-mono font-bold text-text-primary text-[11px] uppercase tracking-wider">
+                      1. JAGA ANONIMITAS (PRIVASI)
+                    </div>
+                    <p className="text-[11px] text-text-secondary">
+                      Dilarang menyebarkan data pribadi (*doxxing*) seperti nama asli, nomor HP, alamat, atau akun medsos milik sendiri maupun orang lain.
+                    </p>
+                  </div>
+
+                  <div className="p-3 border border-border/70 bg-background/50 space-y-1">
+                    <div className="font-mono font-bold text-text-primary text-[11px] uppercase tracking-wider">
+                      2. MELUAPKAN, BUKAN MENYERANG
+                    </div>
+                    <p className="text-[11px] text-text-secondary">
+                      Bebas bercerita, namun dilarang keras melontarkan ancaman, perundungan (*cyberbullying*), ujaran kebencian, atau diskriminasi SARA.
+                    </p>
+                  </div>
+
+                  <div className="p-3 border border-border/70 bg-background/50 space-y-1">
+                    <div className="font-mono font-bold text-text-primary text-[11px] uppercase tracking-wider">
+                      3. BEBAS DARI IKLAN & SPAM
+                    </div>
+                    <p className="text-[11px] text-text-secondary">
+                      Dilarang pesan berulang (*spam*), promosi bisnis komersial, atau link judi online. Jaga feed tetap bersih dan bermakna.
+                    </p>
+                  </div>
+
+                  <div className="p-3 border border-border/70 bg-background/50 space-y-1">
+                    <div className="font-mono font-bold text-text-primary text-[11px] uppercase tracking-wider">
+                      4. KEAMANAN SINYAL (NO MALWARE)
+                    </div>
+                    <p className="text-[11px] text-text-secondary">
+                      Dilarang menyebarkan tautan berbahaya (*phishing*), pornografi eksplisit, atau instruksi tindakan melanggar hukum.
+                    </p>
+                  </div>
+
+                  <div className="p-3 border border-border/70 bg-background/50 space-y-1">
+                    <div className="font-mono font-bold text-text-primary text-[11px] uppercase tracking-wider">
+                      5. BERESONANSI DENGAN EMPATI
+                    </div>
+                    <p className="text-[11px] text-text-secondary">
+                      Saat membalas cerita orang lain, berikan tanggapan yang santun dan empati tanpa menghakimi.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Action */}
+            <div className="pt-2 border-t border-border/40 shrink-0">
               <button
                 onClick={handleCloseModal}
-                className="w-full py-2.5 bg-text-primary text-background font-mono text-xs uppercase tracking-widest hover:bg-accent transition-colors"
+                className="w-full py-2.5 bg-text-primary text-background font-mono text-xs uppercase tracking-widest hover:bg-accent hover:text-white transition-colors font-semibold"
               >
-                Tutup & Mulai Membaca
+                Pahami & Tutup
               </button>
             </div>
           </div>
@@ -869,6 +1046,17 @@ export const Frequency: React.FC = () => {
           setIsMenuOpen(false);
           setIsRecoveryModalOpen(true);
         }}
+        onOpenPrivateRoom={() => {
+          setIsMenuOpen(false);
+          openPrivateRoom();
+        }}
+      />
+
+      {/* 8.5. MODAL RUANG PRIVAT / CONTROL ROOM (/private-room) */}
+      <PrivateRoomModal
+        isOpen={isPrivateRoomOpen}
+        onClose={() => setIsPrivateRoomOpen(false)}
+        myId={myId}
       />
 
       {/* 9. MODAL KUNCI & PEMULIHAN AKUN */}
@@ -939,6 +1127,22 @@ export const Frequency: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 11. MODAL LAPORKAN SINYAL / BALASAN (Poin 1 & 2) */}
+      {reportTarget && (
+        <ReportModal
+          isOpen={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          targetType={reportTarget.targetType}
+          targetId={reportTarget.targetId}
+          transmissionId={reportTarget.transmissionId}
+          targetAuthorId={reportTarget.targetAuthorId}
+          targetAuthorAlias={reportTarget.targetAuthorAlias}
+          targetContent={reportTarget.targetContent}
+          reporterId={myId}
+          onSubmitReport={handleSubmitReport}
+        />
       )}
 
     </div>

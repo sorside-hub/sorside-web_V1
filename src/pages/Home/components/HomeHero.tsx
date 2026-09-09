@@ -12,7 +12,7 @@ export const HomeHero: React.FC = () => {
           <span className="text-text-primary font-semibold">CHANNEL 01 // BEDROOM HEADSPACE</span>
         </div>
         <div className="text-text-secondary text-[11px] hidden sm:block">
-          STATUS: UNFILTERED & SOLITARY
+          RELEASES • ESSAYS • ANONYMOUS SIGNALS
         </div>
       </div>
 
@@ -22,32 +22,37 @@ export const HomeHero: React.FC = () => {
           SORSIDE
         </h1>
         <p className="text-base sm:text-lg text-text-secondary leading-relaxed max-w-xl font-normal">
-          Ruang pelepasan isi kepala. Wadah tanpa filter untuk merilis apa yang tak selesai di pikiran—frekuensi malam, kebisingan kamar, dan catatan jujur untuk menjadi diri sendiri.
+          Ruang pelepasan isi kepala. Wadah tanpa filter untuk merilis apa yang tak selesai di pikiran—katalog musik, catatan tulisan, dan sinyal frekuensi anonim.
         </p>
       </div>
 
-      {/* Quick Navigation Portals */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+      {/* Quick Navigation Portals for the 3 Core Modules */}
+      <div className="flex flex-wrap items-center gap-2.5 pt-2">
         <Link
-          to="/the-side"
-          className="inline-flex items-center justify-between sm:justify-center gap-3 bg-text-primary text-background px-5 py-3 font-mono text-xs tracking-wider uppercase font-semibold hover:bg-accent hover:text-white transition-colors group"
+          to="/discography"
+          className="inline-flex items-center gap-2 bg-surface border border-border text-text-primary px-4 py-2.5 font-mono text-xs tracking-wider uppercase font-semibold hover:border-text-primary hover:text-accent transition-all group"
         >
-          <span className="inline-flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            <span>BACA ISI KEPALA (THE SIDE)</span>
-          </span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <Disc3 className="w-4 h-4 text-accent" />
+          <span>RELEASES</span>
+          <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 group-hover:opacity-100 transition-all" />
         </Link>
 
         <Link
-          to="/discography"
-          className="inline-flex items-center justify-between sm:justify-center gap-3 bg-surface border border-border text-text-primary px-5 py-3 font-mono text-xs tracking-wider uppercase font-semibold hover:bg-surface-hover hover:border-text-primary transition-colors group"
+          to="/the-side"
+          className="inline-flex items-center gap-2 bg-surface border border-border text-text-primary px-4 py-2.5 font-mono text-xs tracking-wider uppercase font-semibold hover:border-text-primary hover:text-accent transition-all group"
         >
-          <span className="inline-flex items-center gap-2">
-            <Disc3 className="w-4 h-4 text-accent" />
-            <span>DENGARKAN REKAMAN</span>
-          </span>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <BookOpen className="w-4 h-4 text-accent" />
+          <span>THE SIDE</span>
+          <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 group-hover:opacity-100 transition-all" />
+        </Link>
+
+        <Link
+          to="/frequency"
+          className="inline-flex items-center gap-2 bg-surface border border-border text-text-primary px-4 py-2.5 font-mono text-xs tracking-wider uppercase font-semibold hover:border-text-primary hover:text-accent transition-all group"
+        >
+          <Radio className="w-4 h-4 text-accent" />
+          <span>FREQUENCY</span>
+          <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 group-hover:opacity-100 transition-all" />
         </Link>
       </div>
     </section>

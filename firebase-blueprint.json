@@ -27,6 +27,47 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "key"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "User report for inappropriate transmissions or replies",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetType": { "type": "string" },
+        "targetId": { "type": "string" },
+        "transmissionId": { "type": "string" },
+        "targetAuthorId": { "type": "string" },
+        "targetAuthorAlias": { "type": "string" },
+        "targetContent": { "type": "string" },
+        "reporterId": { "type": "string" },
+        "reason": { "type": "string" },
+        "note": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["targetType", "targetId", "reporterId", "reason"]
+    },
+    "Blacklist": {
+      "title": "Blacklist",
+      "description": "Blacklisted user ID record for system moderation",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "reason": { "type": "string" },
+        "bannedAt": { "type": "number" },
+        "bannedBy": { "type": "string" }
+      },
+      "required": ["userId"]
+    },
+    "SorsideConfig": {
+      "title": "SorsideConfig",
+      "description": "System settings and origin IDs configuration",
+      "type": "object",
+      "properties": {
+        "originIds": { "type": "array" },
+        "updatedAt": { "type": "number" }
+      }
     }
   },
   "firestore": {
@@ -37,6 +78,18 @@
     "/frequency_identities/{identityKey}": {
       "schema": "FrequencyIdentity",
       "description": "Anonymous account registry keyed by recovery passkey"
+    },
+    "/reports/{reportId}": {
+      "schema": "Report",
+      "description": "User moderation reports collection"
+    },
+    "/blacklists/{userId}": {
+      "schema": "Blacklist",
+      "description": "Banned user accounts collection"
+    },
+    "/sorside_config/{configId}": {
+      "schema": "SorsideConfig",
+      "description": "System configuration documents collection"
     }
   }
 }

@@ -28,5 +28,20 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if true;
     }
+
+    // Koleksi Laporan Pelanggaran (Reports)
+    match /reports/{reportId} {
+      allow read, create, update, delete: if true;
+    }
+
+    // Koleksi User Terblokir (Blacklists)
+    match /blacklists/{userId} {
+      allow read, create, update, delete: if true;
+    }
+
+    // Koleksi Konfigurasi Sistem (Origin IDs & Settings)
+    match /sorside_config/{configId} {
+      allow read, create, update, delete: if true;
+    }
   }
 }
