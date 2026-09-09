@@ -71,14 +71,20 @@ export const ReportModal: React.FC<ReportModalProps> = ({
       targetId,
       transmissionId,
       targetAuthorId,
-      targetAuthorAlias,
       targetContent: targetContent.slice(0, 300), // Cuplikan konten max 300 karakter
       reporterId,
       reason: selectedReason,
-      note: note.trim() ? note.trim().slice(0, 200) : undefined,
       createdAt: Date.now(),
       status: 'pending',
     };
+
+    // Tambahkan field opsional hanya jika ada isinya, untuk menghindari error "undefined" di Firestore
+    if (targetAuthorAlias) {
+      payload.targetAuthorAlias = targetAuthorAlias;
+    }
+    if (note.trim()) {
+      payload.note = note.trim().slice(0, 200);
+    }
 
     try {
       await onSubmitReport(payload);

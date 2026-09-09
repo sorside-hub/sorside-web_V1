@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Search, Hash, Radio, Flame, Sparkles, ChevronRight, CornerDownRight } from 'lucide-react';
 import { Transmission } from './TransmissionItem';
 
@@ -34,6 +35,8 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const touchStartXRef = useRef(0);
   const touchStartYRef = useRef(0);
+
+  const navigate = useNavigate();
 
   // Sync internal search input with incoming prop without auto-forcing keyboard
   useEffect(() => {
@@ -167,6 +170,11 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
 
   const handleFullSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (query.trim() === '/sorside-override' || query.trim() === '/core-room') {
+      onClose();
+      navigate('/core-room');
+      return;
+    }
     if (query.trim()) {
       onApplySearchQuery(query.trim());
       onClose();
@@ -239,6 +247,11 @@ export const FrequencySearchDrawer: React.FC<FrequencySearchDrawerProps> = ({
             <button
               type="button"
               onClick={() => {
+                if (query.trim() === '/sorside-override' || query.trim() === '/core-room') {
+                  onClose();
+                  navigate('/core-room');
+                  return;
+                }
                 onApplySearchQuery(query.trim());
                 onClose();
               }}

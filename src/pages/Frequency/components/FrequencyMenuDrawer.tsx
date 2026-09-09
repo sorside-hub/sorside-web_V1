@@ -175,32 +175,6 @@ export const FrequencyMenuDrawer: React.FC<FrequencyMenuDrawerProps> = ({
             </div>
             <ChevronRight size={14} className="text-text-secondary/50 group-hover:text-text-primary group-hover:translate-x-0.5 transition-all" />
           </button>
-
-          {/* 4. Menu Ruang Privat / Control Room */}
-          {onOpenPrivateRoom && (
-            <button
-              onClick={onOpenPrivateRoom}
-              className="w-full p-3.5 flex items-center justify-between text-left group bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 transition-all rounded mt-2"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 border border-amber-500/30 bg-amber-500/10 text-amber-400 group-hover:border-amber-500 transition-colors rounded">
-                  <Lock size={16} />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-amber-400 group-hover:text-amber-300 transition-colors flex items-center gap-1">
-                    <span>Ruang Privat</span>
-                    <span className="text-[9px] font-mono px-1 py-0.2 bg-amber-500/20 text-amber-400 font-bold tracking-widest uppercase">
-                      /private-room
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-text-secondary/80 font-sans mt-0.5">
-                    Moderasi laporan & status Origin
-                  </div>
-                </div>
-              </div>
-              <ChevronRight size={14} className="text-amber-400/60 group-hover:text-amber-300 group-hover:translate-x-0.5 transition-all" />
-            </button>
-          )}
         </div>
 
         {/* Footer */}

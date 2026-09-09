@@ -136,9 +136,9 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
     }
   };
 
-  const handleSetReplyTo = (replyAuthorId: string, replyAuthorAlias?: string) => {
+  const handleSetReplyTo = (replyId: string, replyAuthorId: string, replyAuthorAlias?: string) => {
     const name = replyAuthorAlias || replyAuthorId;
-    setTargetReply({ id: replyAuthorId, name });
+    setTargetReply({ id: replyId, name });
     inputRef.current?.focus();
   };
 
@@ -333,7 +333,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                           <div className="flex items-center gap-4 mt-1.5">
                             <button
                               type="button"
-                              onClick={() => handleSetReplyTo(root.id, root.authorAlias)}
+                              onClick={() => handleSetReplyTo(root.id, root.authorId, root.authorAlias)}
                               className="text-[11px] font-mono font-medium text-text-secondary/70 hover:text-text-primary transition-colors"
                             >
                               Balas
@@ -430,7 +430,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
                                       <div className="flex items-center gap-4 mt-1.5">
                                         <button
                                           type="button"
-                                          onClick={() => handleSetReplyTo(child.id, child.authorAlias)}
+                                          onClick={() => handleSetReplyTo(child.id, child.authorId, child.authorAlias)}
                                           className="text-[11px] font-mono font-medium text-text-secondary/70 hover:text-text-primary transition-colors"
                                         >
                                           Balas
@@ -482,7 +482,7 @@ export const TransmissionDetailModal: React.FC<TransmissionDetailModalProps> = (
             <div className="flex items-center justify-between text-[11px] font-mono text-text-secondary bg-surface/80 border border-border px-3 py-1 mb-2">
               <span className="flex items-center gap-1">
                 <CornerDownRight size={12} className="text-accent" />
-                Membalas resonansi <strong className="text-accent">@{targetReply.name}</strong>
+                Membalas <strong className="text-accent">@{targetReply.name}</strong>
               </span>
               <button
                 type="button"

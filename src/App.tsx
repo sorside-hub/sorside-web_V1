@@ -11,6 +11,7 @@ import { TheSide } from './pages/TheSide';
 import { ArticleDetail } from './pages/TheSide/ArticleDetail';
 import { About } from './pages/About';
 import { Frequency } from './pages/Frequency';
+import { CoreRoom } from './pages/CoreRoom';
 import { AudioPlayerProvider } from './context/AudioPlayerContext';
 
 export default function App() {
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="the-side" element={<TheSide />} />
           <Route path="the-side/:slug" element={<ArticleDetail />} />
           <Route path="frequency" element={<Frequency />} />
+          <Route path="core-room" element={<CoreRoom />} />
           <Route path="about" element={<About />} />
         </Route>
       </Routes>

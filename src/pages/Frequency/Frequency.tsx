@@ -9,7 +9,6 @@ import { TransmissionDetailModal } from './components/TransmissionDetailModal';
 import { UserProfileView, UserProfileTarget } from './components/UserProfileView';
 import { IdentityRecoveryModal } from './components/IdentityRecoveryModal';
 import { ReportModal, ReportPayload } from './components/ReportModal';
-import { PrivateRoomModal } from './components/PrivateRoomModal';
 import { AvatarGenerator } from './components/AvatarGenerator';
 import { 
   subscribeTransmissions, 
@@ -83,9 +82,8 @@ export const Frequency: React.FC = () => {
     targetContent: string;
   } | null>(null);
 
-  // Origin IDs ("✦ sorside" Badge) & Private Room Modal State
+  // Origin IDs ("✦ sorside" Badge) State
   const [originIds, setOriginIds] = useState<string[]>([]);
-  const [isPrivateRoomOpen, setIsPrivateRoomOpen] = useState(false);
 
   // Modals state
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -148,11 +146,6 @@ export const Frequency: React.FC = () => {
     setIsTopicModalOpen(true);
   };
 
-  const openPrivateRoom = () => {
-    window.history.pushState({ sorsideModal: true }, '');
-    setIsPrivateRoomOpen(true);
-  };
-
   const openDetail = (tx: Transmission, targetReplyUser?: { id: string; name: string }) => {
     window.history.pushState({ sorsideModal: true }, '');
     setSelectedTransmission(tx);
@@ -195,25 +188,11 @@ export const Frequency: React.FC = () => {
   const viewProfileTargetRef = useRef(viewProfileTarget);
   viewProfileTargetRef.current = viewProfileTarget;
 
-  const isPrivateRoomOpenRef = useRef(isPrivateRoomOpen);
-  isPrivateRoomOpenRef.current = isPrivateRoomOpen;
-
-  // Check URL pathname/hash for /private-room on mount
-  useEffect(() => {
-    if (
-      window.location.pathname.includes('/private-room') || 
-      window.location.hash.includes('private-room') ||
-      window.location.search.includes('private-room')
-    ) {
-      setIsPrivateRoomOpen(true);
-    }
-  }, []);
-
+  // Check URL pathname/hash for /private-room on mount (no longer used as it's a separate route, leaving it just in case someone lands here but it does nothing now)
+  
   useEffect(() => {
     const handlePopState = () => {
-      if (isPrivateRoomOpenRef.current) {
-        setIsPrivateRoomOpen(false);
-      } else if (isTopicModalOpenRef.current) {
+      if (isTopicModalOpenRef.current) {
         setIsTopicModalOpen(false);
       } else if (isComposerOpenRef.current) {
         setIsComposerOpen(false);
@@ -1046,17 +1025,6 @@ export const Frequency: React.FC = () => {
           setIsMenuOpen(false);
           setIsRecoveryModalOpen(true);
         }}
-        onOpenPrivateRoom={() => {
-          setIsMenuOpen(false);
-          openPrivateRoom();
-        }}
-      />
-
-      {/* 8.5. MODAL RUANG PRIVAT / CONTROL ROOM (/private-room) */}
-      <PrivateRoomModal
-        isOpen={isPrivateRoomOpen}
-        onClose={() => setIsPrivateRoomOpen(false)}
-        myId={myId}
       />
 
       {/* 9. MODAL KUNCI & PEMULIHAN AKUN */}
