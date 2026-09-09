@@ -218,11 +218,9 @@ export const About: React.FC = () => {
                   </p>
                   <a 
                     href={`mailto:${contactData.email}`}
-                    className="group flex items-center gap-3 transition-colors"
+                    className="group flex items-center gap-4 sm:gap-5 transition-colors"
                   >
-                    <div className="p-2 border border-border bg-background group-hover:border-accent group-hover:text-accent transition-colors">
-                      <Mail className="w-4 h-4 text-text-secondary group-hover:text-accent transition-colors" strokeWidth={1.5} />
-                    </div>
+                    <Mail className="w-5 h-5 text-text-secondary group-hover:text-accent transition-colors shrink-0" strokeWidth={1.5} />
                     <div className="flex flex-col">
                       <span className="font-mono text-sm tracking-wider text-text-primary group-hover:text-accent transition-colors">
                         {contactData.email}

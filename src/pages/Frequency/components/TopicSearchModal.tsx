@@ -83,7 +83,7 @@ export const TopicSearchModal: React.FC<TopicSearchModalProps> = ({
         <div className="p-3.5 border-b border-border/80 flex items-center justify-between bg-surface/40">
           <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-primary">
             <Hash size={15} className="text-accent" />
-            <span>Pilih atau Buat Topic</span>
+            <span>Pilih atau Buat Topik</span>
           </div>
 
           <button
@@ -107,7 +107,7 @@ export const TopicSearchModal: React.FC<TopicSearchModalProps> = ({
               spellCheck="false"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/^#+/, ''))}
-              placeholder="Cari atau ketik topic baru..."
+              placeholder="Cari atau ketik topik baru..."
               className="w-full bg-background border border-border pl-9 pr-8 py-2 font-mono text-xs text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent"
             />
             {searchQuery && (
@@ -134,7 +134,7 @@ export const TopicSearchModal: React.FC<TopicSearchModalProps> = ({
               <div className="flex items-center gap-1.5 min-w-0">
                 <Plus size={14} className="shrink-0 text-accent" />
                 <span className="truncate text-text-primary">
-                  Buat topic <span className="text-accent font-bold">#</span><strong className="font-bold text-text-primary">{formattedSearch}</strong>
+                  Buat topik <span className="text-accent font-bold">#</span><strong className="font-bold text-text-primary">{formattedSearch}</strong>
                 </span>
               </div>
               <span className="text-[10px] uppercase tracking-wider text-text-secondary group-hover:text-text-primary font-mono shrink-0 ml-2 transition-colors">
@@ -146,27 +146,27 @@ export const TopicSearchModal: React.FC<TopicSearchModalProps> = ({
           {/* Topik Terdaftar */}
           <div className="space-y-1">
             <div className="text-[10px] font-mono uppercase tracking-wider text-text-secondary/70 py-1 px-1 flex items-center justify-between">
-              <span>{formattedSearch ? 'Hasil Pencarian Topic:' : 'Topic Aktif Saat Ini:'}</span>
+              <span>{formattedSearch ? 'Hasil Pencarian Topik:' : 'Topik Aktif Saat Ini:'}</span>
               {allTopics.length > 0 && (
-                <span className="text-text-secondary/50 font-normal">({filteredTopics.length} topic)</span>
+                <span className="text-text-secondary/50 font-normal">({filteredTopics.length} topik)</span>
               )}
             </div>
 
             {filteredTopics.length === 0 && exactMatchExists && (
               <p className="text-xs font-mono text-text-secondary/60 py-4 text-center">
-                Topic #{formattedSearch} sudah terdaftar di bawah.
+                Topik #{formattedSearch} sudah terdaftar di bawah.
               </p>
             )}
 
             {allTopics.length === 0 && !formattedSearch && (
               <div className="py-8 px-4 text-center font-mono text-xs text-text-secondary border border-border/50 bg-surface/20">
-                Belum ada topic yang dibuat
+                Belum ada topik yang dibuat
               </div>
             )}
 
             {allTopics.length > 0 && filteredTopics.length === 0 && formattedSearch && (
               <p className="text-xs font-mono text-text-secondary/60 py-4 text-center">
-                Tidak ada topic terdaftar yang cocok dengan &quot;{formattedSearch}&quot;.
+                Tidak ada topik terdaftar yang cocok dengan &quot;{formattedSearch}&quot;.
               </p>
             )}
 

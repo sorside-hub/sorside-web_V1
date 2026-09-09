@@ -706,9 +706,9 @@ export const Frequency: React.FC = () => {
       {!searchQuery.trim() && (
         <div 
           onClick={openComposer}
-          className="pb-3.5 pt-0 mb-4 border-b border-border/70 cursor-pointer transition-colors flex items-center gap-3.5 select-none group hover:border-border"
+          className="py-3.5 mb-4 border-b border-border/70 cursor-pointer transition-colors flex items-center gap-3.5 select-none group hover:border-border"
         >
-          <div className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center shrink-0 group-hover:border-accent/80 transition-colors overflow-hidden">
+          <div className="w-10 h-10 rounded-full border border-border/90 bg-surface/80 flex items-center justify-center shrink-0 group-hover:border-text-secondary/70 transition-colors overflow-hidden">
             {getAvatarInitials(myId, myAlias)}
           </div>
 

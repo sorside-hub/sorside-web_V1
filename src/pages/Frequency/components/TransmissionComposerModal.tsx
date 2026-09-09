@@ -80,9 +80,6 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
             <span className="font-display text-sm uppercase tracking-[0.2em] text-text-primary">
               Cerita Baru
             </span>
-            <span className="font-mono text-[9px] text-text-secondary uppercase">
-              // NO_LOGS_ACTIVE
-            </span>
           </div>
 
           <button
@@ -118,7 +115,7 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
                     type="button"
                     onClick={onOpenTopicModal}
                     className="font-mono text-xs hover:underline font-semibold flex items-center gap-0.5"
-                    title="Ganti topic"
+                    title="Ganti topik"
                   >
                     <span className="text-accent font-bold">#</span>
                     <span className="text-text-primary lowercase">{selectedTag.replace(/^#+/, '').toLowerCase()}</span>
@@ -127,7 +124,7 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
                     type="button"
                     onClick={() => onTagChange('')}
                     className="p-0.5 text-text-secondary/60 hover:text-text-primary transition-colors"
-                    title="Hapus topic"
+                    title="Hapus topik"
                   >
                     <X size={12} />
                   </button>
@@ -139,7 +136,7 @@ export const TransmissionComposerModal: React.FC<TransmissionComposerModalProps>
                   className="flex items-center gap-1 font-mono text-xs text-text-secondary hover:text-text-primary transition-colors"
                 >
                   <Plus size={11} className="text-accent" />
-                  <span>Tambah Topic</span>
+                  <span>Tambah Topik</span>
                 </button>
               )}
             </div>

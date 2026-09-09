@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Article } from '../../types';
-import { Settings, Search } from 'lucide-react';
+import { Settings, Search, X, ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react';
 import { SetupModal } from './components/SetupModal';
 import {
   getCachedArticles,
@@ -16,7 +16,16 @@ export const TheSide: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showSetup, setShowSetup] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
 
   useEffect(() => {
     // Initialize Supabase Realtime channel
@@ -49,13 +58,19 @@ export const TheSide: React.FC = () => {
 
   const categories = ['Stories', 'Thoughts', 'Origins'];
 
-  const filteredArticles = allArticles.filter((article) => {
-    const matchesCategory = filter ? article.category === filter : true;
-    const matchesSearch = searchQuery.trim()
-      ? article.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
-      : true;
-    return matchesCategory && matchesSearch;
-  });
+  const filteredArticles = allArticles
+    .filter((article) => {
+      const matchesCategory = filter ? article.category === filter : true;
+      const matchesSearch = searchQuery.trim()
+        ? article.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+        : true;
+      return matchesCategory && matchesSearch;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
 
   const formatDate = (isoDate: string) => {
     return new Date(isoDate).toLocaleDateString('en-GB', {
@@ -83,37 +98,98 @@ export const TheSide: React.FC = () => {
         </button>
       </header>
 
-      {/* Filters */}
-      <div className="flex justify-center md:justify-start items-center gap-5 sm:gap-6 md:gap-8 border-b border-border pb-4 mb-6">
-        <button 
-          onClick={() => setFilter(null)}
-          className={`font-mono text-[11px] sm:text-xs uppercase tracking-widest transition-colors py-1 ${!filter ? 'text-text-primary border-b border-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
-        >
-          All
-        </button>
-        {categories.map(cat => (
-          <button 
-            key={cat}
-            onClick={() => setFilter(cat)}
-            className={`font-mono text-[11px] sm:text-xs uppercase tracking-widest transition-colors py-1 ${filter === cat ? 'text-text-primary border-b border-text-primary' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+      {/* Filters & Integrated Collapsible Search */}
+      <div className="relative border-b border-border pb-3.5 mb-8 flex items-center min-h-[42px]">
+        {isSearchOpen ? (
+          /* Mode Input Pencarian Aktif */
+          <div className="flex items-center w-full gap-3">
+            <Search size={16} className="text-text-secondary shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="SEARCH ARCHIVE..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1 bg-transparent py-1 text-xs font-mono uppercase tracking-widest text-text-primary placeholder:text-text-secondary/50 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setIsSearchOpen(false);
+              }}
+              className="p-1 text-text-secondary hover:text-text-primary transition-colors shrink-0"
+              title="Tutup Pencarian"
+              aria-label="Tutup Pencarian"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ) : (
+          /* Mode Filter Normal: Tombol Search di Pojok Kiri, Tab Filter Center, Tombol Sort di Pojok Kanan */
+          <div className="relative w-full flex items-center justify-between">
+            {/* Tombol Search di Pojok Kiri */}
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className={`p-1.5 transition-colors shrink-0 z-10 ${
+                searchQuery
+                  ? 'text-accent'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+              title="Cari artikel"
+              aria-label="Cari artikel"
+            >
+              <Search size={16} />
+            </button>
 
-      {/* Search */}
-      <div className="mb-8 relative max-w-sm mx-auto md:mx-0">
-        <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none text-text-secondary">
-          <Search size={14} />
-        </div>
-        <input
-          type="text"
-          placeholder="Search archive..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-transparent border-b border-border py-2 pl-8 pr-4 text-[10px] sm:text-xs font-mono uppercase tracking-widest text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-text-primary transition-colors"
-        />
+            {/* Tab Filter Tetap Center Presisi */}
+            <div className="absolute inset-0 flex justify-center items-center gap-3 sm:gap-6 md:gap-8 pointer-events-none">
+              <button 
+                onClick={() => setFilter(null)}
+                className={`pointer-events-auto font-mono text-[11px] sm:text-xs uppercase tracking-widest transition-colors py-1 ${
+                  !filter 
+                    ? 'text-text-primary border-b border-text-primary font-semibold' 
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                All
+              </button>
+              {categories.map((cat) => (
+                <button 
+                  key={cat}
+                  onClick={() => setFilter(cat)}
+                  className={`pointer-events-auto font-mono text-[11px] sm:text-xs uppercase tracking-widest transition-colors py-1 ${
+                    filter === cat 
+                      ? 'text-text-primary border-b border-text-primary font-semibold' 
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Tombol Sort (Terbaru / Terlama) di Pojok Kanan */}
+            <button
+              type="button"
+              onClick={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+              className={`p-1.5 transition-colors shrink-0 z-10 ${
+                sortOrder === 'asc'
+                  ? 'text-accent'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+              title={sortOrder === 'desc' ? 'Urutan: Terbaru (klik untuk terlama)' : 'Urutan: Terlama (klik untuk terbaru)'}
+              aria-label="Ubah urutan tanggal"
+            >
+              {sortOrder === 'desc' ? (
+                <ArrowDownWideNarrow size={16} />
+              ) : (
+                <ArrowUpNarrowWide size={16} />
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Archival List */}

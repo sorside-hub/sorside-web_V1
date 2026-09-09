@@ -15,6 +15,8 @@ export const Discography: React.FC = () => {
   const [allReleases, setAllReleases] = useState<Release[]>(() => getCachedReleases());
   const [selectedType, setSelectedType] = useState<ReleaseType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [showSetup, setShowSetup] = useState(false);
 
   useEffect(() => {
@@ -38,16 +40,22 @@ export const Discography: React.FC = () => {
     return unsubscribe;
   }, []);
 
-  const filteredReleases = allReleases.filter((release) => {
-    const matchesType = selectedType ? release.type === selectedType : true;
-    const matchesSearch = searchQuery.trim()
-      ? release.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-        release.tracks.some((t) =>
-          t.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
-        )
-      : true;
-    return matchesType && matchesSearch;
-  });
+  const filteredReleases = allReleases
+    .filter((release) => {
+      const matchesType = selectedType ? release.type === selectedType : true;
+      const matchesSearch = searchQuery.trim()
+        ? release.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+          release.tracks.some((t) =>
+            t.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+          )
+        : true;
+      return matchesType && matchesSearch;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.releaseDate).getTime();
+      const dateB = new Date(b.releaseDate).getTime();
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
 
   return (
     <div className="pb-12">
@@ -70,25 +78,17 @@ export const Discography: React.FC = () => {
         </button>
       </header>
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs & Integrated Collapsible Search */}
       <ReleaseFilter
         selectedType={selectedType}
         onSelectType={setSelectedType}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        isSearchOpen={isSearchOpen}
+        onToggleSearch={() => setIsSearchOpen((prev) => !prev)}
+        sortOrder={sortOrder}
+        onToggleSort={() => setSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
       />
-
-      {/* Search Input */}
-      <div className="mb-8 relative max-w-sm mx-auto md:mx-0">
-        <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none text-text-secondary">
-          <Search size={14} />
-        </div>
-        <input
-          type="text"
-          placeholder="Search releases or tracks..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-transparent border-b border-border py-2 pl-8 pr-4 text-[10px] sm:text-xs font-mono uppercase tracking-widest text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-text-primary transition-colors"
-        />
-      </div>
 
       {/* Catalog List */}
       <div className="space-y-0">
