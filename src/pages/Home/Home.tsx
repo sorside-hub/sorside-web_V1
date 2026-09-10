@@ -3,6 +3,7 @@ import { HomeRadarNav } from './components/HomeRadarNav';
 import { LoneTransmissionCard } from './components/LoneTransmissionCard';
 import { ThoughtFragments } from './components/ThoughtFragments';
 import { RandomFrequencyCard } from './components/RandomFrequencyCard';
+import { RandomGlossaryCard } from './components/RandomGlossaryCard';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
@@ -42,7 +43,7 @@ export const Home: React.FC = () => {
                   to="/discography"
                   className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent font-semibold transition-all group border-b border-text-primary/30 hover:border-accent pb-1"
                 >
-                  <span>Buka Seluruh Katalog Audio</span>
+                  <span>Buka Katalog</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
@@ -150,76 +151,19 @@ export const Home: React.FC = () => {
                   to="/about"
                   className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent font-semibold transition-all group border-b border-text-primary/30 hover:border-accent pb-1"
                 >
-                  <span>Baca Cerita Lengkap Sorside</span>
+                  <span>Mengenal Sorside</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </div>
             </div>
 
-            {/* Right Column: Manifesto Card */}
+            {/* Right Column: Random Interactive Glossary Card */}
             <div className="lg:col-span-7">
-              <div className="border border-border bg-surface hover:border-text-secondary transition-all p-6 sm:p-8 space-y-6 relative overflow-hidden group">
-                {/* Subtle Background Tag */}
-                <div className="absolute -right-4 -bottom-6 font-display text-8xl text-text-primary/[0.03] uppercase select-none pointer-events-none">
-                  CORE
-                </div>
-
-                <div className="space-y-4 relative z-10">
-                  <div className="flex items-center justify-between border-b border-border/50 pb-3 font-mono text-[10px] text-text-secondary uppercase">
-                    <span className="text-accent font-semibold">// MANIFESTO & HEADSPACE</span>
-                    <span>ORIGIN: BEDROOM STUDIOS</span>
-                  </div>
-
-                  <h3 className="text-lg sm:text-xl font-serif text-text-primary leading-snug">
-                    "Setiap lagu, catatan arsip tulisan, dan frekuensi anonim yang terkirim adalah bagian dari satu kesatuan: merayakan apa yang nyata dan tidak disensor."
-                  </h3>
-
-                  <p className="text-xs sm:text-sm font-sans text-text-secondary leading-relaxed max-w-xl">
-                    Sorside dibangun bukan untuk mengejar kesempurnaan algoritma, melainkan sebagai ruang pelepasan mandiri—tempat ide-ide yang belum selesai di kepala bisa menemukan rumah dan beresonansi dengan siapa saja yang membutuhkan.
-                  </p>
-
-                  {/* Specs & Pillars */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
-                    <div className="border border-border bg-background p-2.5 space-y-1">
-                      <div className="text-[9px] font-mono text-text-secondary uppercase">MEDIUM</div>
-                      <div className="text-xs font-mono font-bold text-text-primary">SONIC & TEXT</div>
-                    </div>
-                    <div className="border border-border bg-background p-2.5 space-y-1">
-                      <div className="text-[9px] font-mono text-text-secondary uppercase">ETHOS</div>
-                      <div className="text-xs font-mono font-bold text-text-primary">UNFILTERED RAW</div>
-                    </div>
-                    <div className="border border-border bg-background p-2.5 space-y-1">
-                      <div className="text-[9px] font-mono text-text-secondary uppercase">TRANSMISSION</div>
-                      <div className="text-xs font-mono font-bold text-accent">OPEN COMMUNITY</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-3 flex items-center justify-between border-t border-border/60 font-mono text-[11px] text-text-secondary uppercase tracking-wider relative z-10">
-                  <span>EST. 2024</span>
-                  <Link
-                    to="/about"
-                    className="inline-flex items-center gap-1.5 text-text-primary hover:text-accent font-semibold transition-colors group/link"
-                  >
-                    <span>SELENGKAPNYA</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover/link:translate-x-1 transition-transform" />
-                  </Link>
-                </div>
-              </div>
+              <RandomGlossaryCard />
             </div>
           </div>
         </section>
       </div>
-
-      {/* Minimalist Footer */}
-      <footer className="pt-12 border-t border-border/60 text-center space-y-2">
-        <div className="font-mono text-[11px] text-text-primary uppercase tracking-widest font-semibold">
-          SORSIDE // ATLAS & BEDROOM ARCHIVE
-        </div>
-        <p className="font-mono text-[10px] text-text-secondary tracking-widest uppercase">
-          01 DISCOGRAPHY • 02 THE SIDE • 03 FREQUENCY • 04 ABOUT
-        </p>
-      </footer>
     </div>
   );
 };

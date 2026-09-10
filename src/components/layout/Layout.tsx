@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { Navigation } from './Navigation';
 import { PWAInstallButton } from '../ui/PWAInstallButton';
 import { AudioPillPlayer } from '../audio/AudioPillPlayer';
 import { initBackgroundPrefetch } from '../../lib/prefetchManager';
 
 export const Layout: React.FC = () => {
+  const { pathname } = useLocation();
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
+
+  // Scroll to top whenever navigating to a new route
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
 
   useEffect(() => {
     // Initiate unified background prefetch across Supabase tables

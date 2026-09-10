@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Radio, Shuffle, MessageSquare, Tag } from 'lucide-react';
+import { Radio, Shuffle, MessageSquare, ChevronRight } from 'lucide-react';
 import { subscribeTransmissions } from '../../../services/frequencyService';
 import { Transmission } from '../../Frequency/components/TransmissionItem';
 
@@ -43,6 +43,8 @@ export const RandomFrequencyCard: React.FC = () => {
     }, 220);
   };
 
+  const cleanTopic = currentTx?.tag ? currentTx.tag.replace(/^#+/, '') : '';
+
   return (
     <div className="space-y-3">
       {/* Sub Header / Metadata Bar */}
@@ -78,16 +80,19 @@ export const RandomFrequencyCard: React.FC = () => {
 
           {/* Top Sender & Channel Bar */}
           <div className="flex items-center justify-between gap-3 text-xs font-mono border-b border-border/50 pb-3 relative z-10">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
               <span className="w-2 h-2 rounded-full bg-accent/80 shrink-0" />
               <span className="font-bold text-text-primary truncate">
                 {currentTx.authorAlias || currentTx.authorId}
               </span>
-              {currentTx.tag && (
-                <span className="inline-flex items-center gap-1 text-[10px] text-accent font-normal bg-accent/10 px-2 py-0.5 border border-accent/20">
-                  <Tag className="w-2.5 h-2.5" />
-                  #{currentTx.tag}
-                </span>
+              {cleanTopic && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <ChevronRight size={13} className="text-text-secondary/50 shrink-0" />
+                  <span className="font-mono font-semibold text-xs flex items-center gap-0.5">
+                    <span className="text-accent font-bold">#</span>
+                    <span className="text-text-primary lowercase">{cleanTopic.toLowerCase()}</span>
+                  </span>
+                </div>
               )}
             </div>
 
@@ -109,7 +114,7 @@ export const RandomFrequencyCard: React.FC = () => {
             <div className="flex items-center gap-3 text-xs font-mono text-text-secondary">
               <span className="inline-flex items-center gap-1.5 text-[11px]">
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>{currentTx.replies?.length || 0} Resonansi</span>
+                <span>{currentTx.replies?.length || 0}</span>
               </span>
             </div>
 
