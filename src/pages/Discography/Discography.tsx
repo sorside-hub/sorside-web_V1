@@ -60,13 +60,10 @@ export const Discography: React.FC = () => {
   return (
     <div className="pb-12">
       {/* Header */}
-      <header className="mb-10 md:mb-12 text-center md:text-left relative">
-        <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest mb-4">
+      <header className="mb-8 md:mb-10 text-center md:text-left relative">
+        <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest">
           Discography
         </h2>
-        <p className="text-sm font-mono text-text-secondary uppercase tracking-widest">
-          Keresahan yang menemukan bentuknya.
-        </p>
 
         {/* DEV ONLY: Supabase Setup Button */}
         <button

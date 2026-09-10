@@ -82,11 +82,8 @@ export const TheSide: React.FC = () => {
 
   return (
     <div className="pb-12">
-      <header className="mb-10 md:mb-12 text-center md:text-left relative">
-        <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest mb-4">The Side</h2>
-        <p className="text-sm font-mono text-text-secondary uppercase tracking-widest">
-          Ruang bagi sisi lain yang belum sempat tersampaikan.
-        </p>
+      <header className="mb-8 md:mb-10 text-center md:text-left relative">
+        <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest">The Side</h2>
         
         {/* DEV ONLY: Settings Button */}
         <button

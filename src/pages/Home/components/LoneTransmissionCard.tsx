@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Play, Pause, ExternalLink, Disc, Disc3, Mic2, Sparkles } from 'lucide-react';
+import { Play, Pause, ExternalLink, Disc3, Volume2, Radio } from 'lucide-react';
 import { getCachedReleases, subscribeToReleases, revalidateReleases } from '../../../lib/discographyStore';
 import { resolveImageUrl } from '../../../lib/imageHelper';
 import { useAudioPlayer } from '../../../context/AudioPlayerContext';
@@ -47,116 +47,136 @@ export const LoneTransmissionCard: React.FC = () => {
   };
 
   return (
-    <section className="space-y-4">
-      {/* Section Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      {/* Sub Header / Metadata Bar */}
+      <div className="flex items-center justify-between font-mono text-[10px] text-text-secondary uppercase">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-accent inline-block" />
-          <h2 className="font-mono text-xs uppercase tracking-widest text-text-primary font-semibold">
-            01 // Release Update
-          </h2>
+          <span className="w-1.5 h-1.5 bg-accent inline-block rounded-full" />
+          <span className="text-text-primary font-bold tracking-widest">RILISAN TERBARU</span>
         </div>
-        <span className="font-mono text-[10px] text-text-secondary uppercase border border-border px-2 py-0.5">
-          {catalogNumber}
-        </span>
+        {latestRelease && (
+          <div className="flex items-center gap-2">
+            <span className="border border-border bg-surface px-2 py-0.5 tracking-widest font-bold text-text-primary">
+              {catalogNumber}
+            </span>
+            <span className="border border-border bg-surface px-2 py-0.5 tracking-widest">
+              {releaseType}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Cassette / Vinyl Style Capsule */}
       {!latestRelease ? (
-        <div className="border border-border bg-surface p-12 flex items-center justify-center">
-          <p className="font-mono text-sm tracking-widest text-text-secondary uppercase text-center">
-            // NO TRANSMISSION DETECTED
+        <div className="border border-border bg-surface p-12 flex flex-col items-center justify-center space-y-2">
+          <Disc3 className="w-8 h-8 text-text-secondary/40 animate-spin" />
+          <p className="font-mono text-xs tracking-widest text-text-secondary uppercase text-center">
+            // BELUM ADA RILISAN TERSEDIA
           </p>
         </div>
       ) : (
-      <div className="border border-border bg-surface hover:border-text-secondary transition-colors p-4 sm:p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-start">
-          {/* Cover Art with subtle vinyl ring effect */}
-          <div className="relative w-32 h-32 sm:w-40 sm:h-40 shrink-0 bg-background border border-border overflow-hidden group">
-            <RevealImage
-              src={coverUrl}
-              alt={title}
-            />
-            {/* Corner Badge */}
-            <div className="absolute top-1.5 left-1.5 bg-black/80 px-1.5 py-0.5 text-[9px] font-mono tracking-widest text-white border border-white/20 uppercase">
-              {releaseType}
-            </div>
-
-            {/* Play Button Overlay (if track has audio) */}
-            {firstTrack && (
-              <button
-                type="button"
-                onClick={handlePlayClick}
-                className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                title={isThisPlaying ? 'Jeda Lagu' : 'Putar Lagu'}
-              >
-                <div className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center shadow-lg transform group-hover:scale-105 transition-transform">
-                  {isThisPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-                </div>
-              </button>
-            )}
+        <div className="border border-border bg-surface hover:border-text-secondary transition-all p-5 sm:p-6 space-y-5 relative overflow-hidden group">
+          {/* Subtle Background Vinyl Indicator */}
+          <div className="absolute -right-8 -bottom-10 opacity-5 pointer-events-none select-none">
+            <Disc3 className={`w-48 h-48 text-text-primary ${isThisPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
           </div>
 
-          {/* Release Metadata & Story */}
-          <div className="flex-1 space-y-3 min-w-0">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-[10px] font-mono tracking-wider text-accent uppercase">
-                <span>[ RAW BEDROOM AUDIO ]</span>
-                <span className="text-text-secondary">•</span>
-                <span className="text-text-secondary">ONE-TAKE RECORDING</span>
+          <div className="flex flex-col sm:flex-row gap-5 items-start relative z-10">
+            {/* Cover Art Box with Play Trigger */}
+            <div className="relative w-32 h-32 sm:w-36 sm:h-36 shrink-0 bg-background border border-border overflow-hidden group/cover">
+              <RevealImage
+                src={coverUrl}
+                alt={title}
+              />
+
+              {/* Status Badge */}
+              <div className="absolute top-1.5 left-1.5 bg-black/85 px-1.5 py-0.5 text-[8px] font-mono tracking-widest text-white border border-white/20 uppercase">
+                {releaseType}
               </div>
-              <h3 className="text-2xl sm:text-3xl font-display uppercase tracking-wide text-text-primary">
-                {title}
-              </h3>
+
+              {/* Play / Pause Overlay Button */}
+              {firstTrack && (
+                <button
+                  type="button"
+                  onClick={handlePlayClick}
+                  className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center opacity-0 group-hover/cover:opacity-100 transition-opacity"
+                  title={isThisPlaying ? 'Jeda Audio' : 'Putar Audio'}
+                >
+                  <div className="w-11 h-11 rounded-full bg-accent text-white flex items-center justify-center shadow-xl transform group-hover/cover:scale-110 transition-transform">
+                    {isThisPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                  </div>
+                </button>
+              )}
             </div>
 
-            {/* Technical Specs Tags */}
-            <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-text-secondary">
-              <span className="bg-background border border-border px-2 py-0.5">
-                RECORDED AT: KAMAR
-              </span>
-              <span className="bg-background border border-border px-2 py-0.5">
-                LABEL: SORSIDE RECORDS
-              </span>
-            </div>
+            {/* Release Info & Liner Note */}
+            <div className="flex-1 space-y-3 min-w-0">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-[10px] font-mono tracking-wider text-accent uppercase">
+                  <span>RAW BEDROOM AUDIO</span>
+                  <span className="text-text-secondary">•</span>
+                  <span>{latestRelease.releaseDate || '2024'}</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-display uppercase tracking-wide text-text-primary leading-tight">
+                  {title}
+                </h3>
+              </div>
 
-            {/* Liner Note Quote from Band */}
-            <div className="border-l-2 border-accent/70 pl-3 py-1 bg-surface/50">
-              <p className="text-xs sm:text-sm text-text-secondary italic font-mono leading-relaxed">
-                {latestRelease?.tagline ? `"${latestRelease.tagline}"` : latestRelease?.description ? `"${latestRelease.description.substring(0, 100)}..."` : '"Lagu ini dibuat untuk menemani malam-malam panjang kalian."'}
-              </p>
+              {/* Liner Note Quote */}
+              <div className="border-l-2 border-accent pl-3 py-1 bg-background/50">
+                <p className="text-xs text-text-secondary italic font-mono leading-relaxed line-clamp-2">
+                  {latestRelease?.tagline 
+                    ? `"${latestRelease.tagline}"` 
+                    : latestRelease?.description 
+                      ? `"${latestRelease.description.substring(0, 110)}..."` 
+                      : '"Arsip rekaman mentah yang diracik di kamar tidur."'}
+                </p>
+              </div>
+
+              {/* Track status if playing */}
+              {firstTrack && isThisPlaying && (
+                <div className="flex items-center gap-2 font-mono text-[10px] text-accent">
+                  <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+                  <span>SEDANG MEMUTAR: {firstTrack.title}</span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Action Controls */}
-        <div className="pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-[11px] font-mono text-text-secondary">
-            CATALOG // {catalogNumber}
-          </div>
+          {/* Action Footer */}
+          <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 relative z-10">
+            <div className="text-[10px] font-mono text-text-secondary uppercase tracking-wider">
+              FORMAT: <span className="text-text-primary font-semibold">DIGITAL / STREAMING</span>
+            </div>
 
-          <div className="flex items-center gap-3">
-            {firstTrack && (
-              <button
-                type="button"
-                onClick={handlePlayClick}
-                className="inline-flex items-center gap-2 text-xs font-mono tracking-wider uppercase text-text-primary hover:text-accent transition-colors"
+            <div className="flex items-center gap-2.5">
+              {firstTrack && (
+                <button
+                  type="button"
+                  onClick={handlePlayClick}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono tracking-wider uppercase border transition-all ${
+                    isThisPlaying
+                      ? 'bg-accent text-white border-accent font-bold'
+                      : 'bg-background hover:bg-surface-hover text-text-primary border-border hover:border-text-primary'
+                  }`}
+                >
+                  {isThisPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  <span>{isThisPlaying ? 'JEDA' : 'PUTAR CEPAT'}</span>
+                </button>
+              )}
+              
+              <Link
+                to={`/discography/${releaseSlug}`}
+                className="inline-flex items-center gap-1.5 bg-background hover:bg-surface-hover border border-border hover:border-text-primary px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-text-primary transition-colors"
               >
-                {isThisPlaying ? <Pause className="w-3.5 h-3.5 text-accent" /> : <Play className="w-3.5 h-3.5" />}
-                <span>{isThisPlaying ? 'PAUSE' : 'QUICK LISTEN'}</span>
-              </button>
-            )}
-            <Link
-              to={`/discography/${releaseSlug}`}
-              className="inline-flex items-center gap-1.5 bg-background border border-border px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-text-primary hover:border-accent hover:text-accent transition-colors"
-            >
-              <span>BUKA DETAIL & LIRIK</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
+                <span>LIHAT LIRIK & DETAIL</span>
+                <ExternalLink className="w-3 h-3 opacity-70" />
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
       )}
-    </section>
+    </div>
   );
 };
+

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { Radio, Shuffle, ArrowRight, MessageSquare, Tag, Sparkles } from 'lucide-react';
+import { Radio, Shuffle, MessageSquare, Tag } from 'lucide-react';
 import { subscribeTransmissions } from '../../../services/frequencyService';
 import { Transmission } from '../../Frequency/components/TransmissionItem';
 
@@ -36,28 +35,29 @@ export const RandomFrequencyCard: React.FC = () => {
 
     setTimeout(() => {
       let nextIdx = Math.floor(Math.random() * transmissions.length);
-      // Ensure we don't pick the exact same item if there are multiple items
       if (nextIdx === selectedIndex && transmissions.length > 1) {
         nextIdx = (nextIdx + 1) % transmissions.length;
       }
       setSelectedIndex(nextIdx);
       setIsShuffling(false);
-    }, 200);
+    }, 220);
   };
 
   return (
-    <section className="space-y-4">
-      {/* Section Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      {/* Sub Header / Metadata Bar */}
+      <div className="flex items-center justify-between font-mono text-[10px] text-text-secondary uppercase">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 bg-accent inline-block rounded-full animate-ping" />
-          <h2 className="font-mono text-xs uppercase tracking-widest text-text-primary font-semibold">
-            03 // Cerita Random Frequency
-          </h2>
+          <span className="w-1.5 h-1.5 bg-emerald-500 inline-block rounded-full animate-ping" />
+          <span className="text-text-primary font-bold tracking-widest">CERITA TERPILIH</span>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[10px] text-text-secondary uppercase">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-          <span>ANONYMOUS FEED</span>
+        <div className="flex items-center gap-2">
+          <span className="border border-border bg-surface px-2 py-0.5 tracking-widest text-text-secondary">
+            TOTAL CERITA: <span className="text-text-primary font-bold">{transmissions.length}</span>
+          </span>
+          <span className="border border-border bg-surface px-2 py-0.5 tracking-widest text-emerald-500 font-semibold hidden sm:inline-block">
+            LIVE BROADCAST
+          </span>
         </div>
       </div>
 
@@ -70,73 +70,66 @@ export const RandomFrequencyCard: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="border border-border bg-surface hover:border-text-secondary transition-all p-5 sm:p-7 space-y-5 relative overflow-hidden group">
+        <div className="border border-border bg-surface hover:border-text-secondary transition-all p-5 sm:p-6 space-y-5 relative overflow-hidden group">
           {/* Subtle Background Frequency Tag */}
           <div className="absolute -right-4 -bottom-6 font-display text-8xl text-text-primary/[0.03] uppercase select-none pointer-events-none">
             FREQ
           </div>
 
-          {/* Top Meta Info */}
-          <div className="flex items-center justify-between gap-3 text-xs font-mono border-b border-border/50 pb-3">
+          {/* Top Sender & Channel Bar */}
+          <div className="flex items-center justify-between gap-3 text-xs font-mono border-b border-border/50 pb-3 relative z-10">
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-2 h-2 rounded-full bg-accent/80 shrink-0" />
               <span className="font-bold text-text-primary truncate">
                 {currentTx.authorAlias || currentTx.authorId}
               </span>
               {currentTx.tag && (
-                <span className="inline-flex items-center gap-1 text-[11px] text-accent font-normal bg-accent/10 px-2 py-0.5 border border-accent/20">
-                  <Tag className="w-3 h-3" />
+                <span className="inline-flex items-center gap-1 text-[10px] text-accent font-normal bg-accent/10 px-2 py-0.5 border border-accent/20">
+                  <Tag className="w-2.5 h-2.5" />
                   #{currentTx.tag}
                 </span>
               )}
             </div>
 
-            <span className="text-[11px] text-text-secondary/70 shrink-0">
+            <span className="text-[10px] text-text-secondary/80 shrink-0 font-mono">
               {currentTx.timestamp}
             </span>
           </div>
 
-          {/* Story Quote Display */}
-          <div className="py-2 space-y-3">
+          {/* Story Quote Display with Smooth Transition */}
+          <div className={`py-1 space-y-3 relative z-10 transition-opacity duration-200 ${isShuffling ? 'opacity-20' : 'opacity-100'}`}>
             <p className="text-base sm:text-lg text-text-primary font-sans leading-relaxed whitespace-pre-wrap italic">
               "{currentTx.content}"
             </p>
           </div>
 
           {/* Bottom Action Controls */}
-          <div className="pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3 relative z-10">
             {/* Stats */}
             <div className="flex items-center gap-3 text-xs font-mono text-text-secondary">
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-[11px]">
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span>{currentTx.replies?.length || 0} Resonansi</span>
               </span>
             </div>
 
             {/* Interactive Actions */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               <button
                 type="button"
                 onClick={handleShuffle}
                 disabled={isShuffling || transmissions.length <= 1}
-                className="inline-flex items-center gap-1.5 bg-background border border-border px-3.5 py-2 text-xs font-mono uppercase tracking-wider text-text-primary hover:border-accent hover:text-accent transition-all active:scale-95 disabled:opacity-50"
-                title="Acak sinyal cerita lainnya"
+                className="inline-flex items-center gap-1.5 bg-background hover:bg-surface-hover border border-border hover:border-text-primary px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-text-primary transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                title="Acak cerita lainnya"
               >
-                <Shuffle className={`w-3.5 h-3.5 ${isShuffling ? 'animate-spin text-accent' : ''}`} />
-                <span>ACAK SINYAL LAIN</span>
+                <Shuffle className={`w-3 h-3 ${isShuffling ? 'animate-spin text-accent' : ''}`} />
+                <span>{isShuffling ? 'MEMINDAI...' : 'ACAK CERITA'}</span>
               </button>
-
-              <Link
-                to="/frequency"
-                className="inline-flex items-center gap-1.5 bg-text-primary text-background px-4 py-2 text-xs font-mono uppercase tracking-wider font-semibold hover:bg-accent hover:text-white transition-colors"
-              >
-                <span>RESONANSI / BUKA FREQUENCY</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
             </div>
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 };
+
