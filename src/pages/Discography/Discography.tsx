@@ -65,7 +65,7 @@ export const Discography: React.FC = () => {
           Discography
         </h2>
         <p className="text-sm font-mono text-text-secondary uppercase tracking-widest">
-          Sonic catalog · Singles, EPs & Albums
+          Keresahan yang menemukan bentuknya.
         </p>
 
         {/* DEV ONLY: Supabase Setup Button */}

@@ -85,7 +85,7 @@ export const TheSide: React.FC = () => {
       <header className="mb-10 md:mb-12 text-center md:text-left relative">
         <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest mb-4">The Side</h2>
         <p className="text-sm font-mono text-text-secondary uppercase tracking-widest">
-          The unseen side of every creation.
+          Ruang bagi sisi lain yang belum sempat tersampaikan.
         </p>
         
         {/* DEV ONLY: Settings Button */}
