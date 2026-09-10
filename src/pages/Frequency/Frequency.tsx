@@ -75,6 +75,7 @@ export const Frequency: React.FC = () => {
 
   // In-app Delete Confirmation State (Menggantikan window.confirm yang diblokir iframe)
   const [txToDelete, setTxToDelete] = useState<string | null>(null);
+  const [replyToDelete, setReplyToDelete] = useState<{ txId: string; replyId: string } | null>(null);
 
   // Report Target State (Poin 1 & 2)
   const [reportTarget, setReportTarget] = useState<{
@@ -544,13 +545,41 @@ export const Frequency: React.FC = () => {
     setTxToDelete(id);
   };
 
-  const handleDeleteReply = async (txId: string, replyId: string) => {
-    if (confirm('Yakin ingin menghapus balasan ini?')) {
-      try {
-        await deleteReplyFromFirestore(txId, replyId);
-      } catch (err) {
-        console.error('Failed to delete reply:', err);
-      }
+  const handleDeleteReply = (txId: string, replyId: string) => {
+    setReplyToDelete({ txId, replyId });
+  };
+
+  const handleConfirmDeleteReply = async () => {
+    if (!replyToDelete) return;
+    const { txId, replyId } = replyToDelete;
+    setReplyToDelete(null);
+
+    // Optimistic UI update on transmissions feed
+    setTransmissions(prev =>
+      prev.map(tx => {
+        if (tx.id === txId) {
+          return {
+            ...tx,
+            replies: Array.isArray(tx.replies) ? tx.replies.filter(r => r.id !== replyId) : []
+          };
+        }
+        return tx;
+      })
+    );
+
+    // Optimistic UI update on active modal view
+    setSelectedTransmission(prev => {
+      if (!prev || prev.id !== txId) return prev;
+      return {
+        ...prev,
+        replies: Array.isArray(prev.replies) ? prev.replies.filter(r => r.id !== replyId) : []
+      };
+    });
+
+    try {
+      await deleteReplyFromFirestore(txId, replyId);
+    } catch (err) {
+      console.warn('[Frequency] Gagal hapus balasan dari Firestore:', err);
     }
   };
 
@@ -1156,6 +1185,45 @@ export const Frequency: React.FC = () => {
               <button
                 type="button"
                 onClick={handleConfirmDelete}
+                className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider font-semibold transition-colors"
+              >
+                Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL KONFIRMASI HAPUS BALASAN IN-APP (Z-index 60 agar muncul di atas modal detail) */}
+      {replyToDelete && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setReplyToDelete(null)}
+        >
+          <div 
+            className="w-full max-w-sm border border-border bg-surface p-5 sm:p-6 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-1.5">
+              <h4 className="font-mono text-sm font-bold text-text-primary uppercase tracking-wider">
+                Hapus Balasan?
+              </h4>
+              <p className="font-sans text-xs text-text-secondary leading-relaxed">
+                Balasan ini akan dihapus secara permanen dari gelombang Frequency dan database. Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-border/50">
+              <button
+                type="button"
+                onClick={() => setReplyToDelete(null)}
+                className="px-3.5 py-1.5 border border-border hover:border-text-primary text-text-secondary hover:text-text-primary font-mono text-xs uppercase tracking-wider transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteReply}
                 className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider font-semibold transition-colors"
               >
                 Hapus

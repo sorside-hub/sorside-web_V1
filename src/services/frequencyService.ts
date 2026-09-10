@@ -8,6 +8,7 @@ import {
   deleteDoc, 
   onSnapshot, 
   query, 
+  where,
   orderBy, 
   limit, 
   serverTimestamp,
@@ -480,10 +481,31 @@ export const addReplyToFirestore = async (txId: string, reply: Reply) => {
 
 /**
  * Menghapus transmisi dari Firestore.
+ * Sesuai Opsi B: Otomatis menyelesaikan (resolve) laporan pending terkait dengan catatan "Konten telah dihapus oleh pengirim".
  */
 export const deleteTransmissionFromFirestore = async (txId: string) => {
   const txRef = doc(db, TRANSMISSIONS_COLLECTION, txId);
   await deleteDoc(txRef);
+
+  // Auto-resolve pending reports yang menargetkan transmisi ini
+  try {
+    const reportsQ = query(
+      collection(db, REPORTS_COLLECTION),
+      where('transmissionId', '==', txId),
+      where('status', '==', 'pending')
+    );
+    const reportSnap = await getDocs(reportsQ);
+    const updates = reportSnap.docs.map((d) =>
+      updateDoc(doc(db, REPORTS_COLLECTION, d.id), {
+        status: 'resolved',
+        note: 'Konten telah dihapus oleh pengirim',
+        updatedAt: Date.now()
+      })
+    );
+    await Promise.all(updates);
+  } catch (err) {
+    console.warn('[Frequency] Auto-resolve reports on transmission deletion warning:', err);
+  }
 };
 
 /**
@@ -681,6 +703,7 @@ export const unbanUserInFirestore = async (userId: string) => {
 
 /**
  * Menghapus balasan spesifik dari suatu transmisi di Firestore.
+ * Sesuai Opsi B: Otomatis menyelesaikan (resolve) laporan pending terkait dengan catatan "Balasan telah dihapus oleh pengirim".
  */
 export const deleteReplyFromFirestore = async (txId: string, replyId: string) => {
   const txRef = doc(db, TRANSMISSIONS_COLLECTION, txId);
@@ -690,6 +713,66 @@ export const deleteReplyFromFirestore = async (txId: string, replyId: string) =>
     if (Array.isArray(data.replies)) {
       const updatedReplies = data.replies.filter((r: any) => r.id !== replyId);
       await updateDoc(txRef, { replies: updatedReplies });
+    }
+  }
+
+  // Auto-resolve pending reports yang menargetkan balasan ini
+  try {
+    const reportsQ = query(
+      collection(db, REPORTS_COLLECTION),
+      where('targetId', '==', replyId),
+      where('status', '==', 'pending')
+    );
+    const reportSnap = await getDocs(reportsQ);
+    const updates = reportSnap.docs.map((d) =>
+      updateDoc(doc(db, REPORTS_COLLECTION, d.id), {
+        status: 'resolved',
+        note: 'Balasan telah dihapus oleh pengirim',
+        updatedAt: Date.now()
+      })
+    );
+    await Promise.all(updates);
+  } catch (err) {
+    console.warn('[Frequency] Auto-resolve reports on reply deletion warning:', err);
+  }
+};
+
+/**
+ * Sinkronisasi otomatis laporan orphan:
+ * Memeriksa laporan berstatus 'pending' yang konten aslinya sudah tidak ada lagi di database,
+ * dan langsung menandainya sebagai 'resolved' dengan catatan yang jelas.
+ */
+export const syncOrphanReports = async (reports: ReportItem[]) => {
+  const pendingReports = reports.filter((r) => r.status === 'pending');
+  if (pendingReports.length === 0) return;
+
+  for (const report of pendingReports) {
+    try {
+      const txRef = doc(db, TRANSMISSIONS_COLLECTION, report.transmissionId);
+      const txDoc = await getDoc(txRef);
+
+      if (!txDoc.exists()) {
+        // Dokumen transmisi sudah tidak ada di Firestore
+        await updateDoc(doc(db, REPORTS_COLLECTION, report.id), {
+          status: 'resolved',
+          note: 'Konten telah dihapus oleh pengirim',
+          updatedAt: Date.now()
+        });
+      } else if (report.targetType === 'reply') {
+        // Cek apakah balasan masih ada di dalam array replies transmisi
+        const data = txDoc.data();
+        const replies = Array.isArray(data.replies) ? data.replies : [];
+        const replyExists = replies.some((r: any) => r.id === report.targetId);
+        if (!replyExists) {
+          await updateDoc(doc(db, REPORTS_COLLECTION, report.id), {
+            status: 'resolved',
+            note: 'Balasan telah dihapus oleh pengirim',
+            updatedAt: Date.now()
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[Frequency] Sync orphan report warning:', err);
     }
   }
 };

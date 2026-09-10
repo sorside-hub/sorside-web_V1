@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Article } from '../../types';
-import { Settings, Search, X, ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react';
-import { SetupModal } from './components/SetupModal';
+import { Search, X, ArrowDownWideNarrow, ArrowUpNarrowWide } from 'lucide-react';
 import {
   getCachedArticles,
   subscribeToArticles,
@@ -18,7 +17,6 @@ export const TheSide: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [showSetup, setShowSetup] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,17 +80,8 @@ export const TheSide: React.FC = () => {
 
   return (
     <div className="pb-12">
-      <header className="mb-8 md:mb-10 text-center md:text-left relative">
+      <header className="mb-8 md:mb-10 text-center md:text-left">
         <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest">The Side</h2>
-        
-        {/* DEV ONLY: Settings Button */}
-        <button
-          onClick={() => setShowSetup(true)}
-          className="absolute right-0 top-0 p-2 text-text-secondary hover:text-text-primary transition-colors"
-          title="Supabase Setup (Dev Only)"
-        >
-          <Settings size={18} />
-        </button>
       </header>
 
       {/* Filters & Integrated Collapsible Search */}
@@ -245,8 +234,6 @@ export const TheSide: React.FC = () => {
           })
         )}
       </div>
-
-      <SetupModal isOpen={showSetup} onClose={() => setShowSetup(false)} />
     </div>
   );
 };

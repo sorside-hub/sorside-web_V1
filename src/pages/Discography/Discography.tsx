@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Settings } from 'lucide-react';
 import { Release, ReleaseType } from '../../types/discography';
 import { ReleaseFilter } from './components/ReleaseFilter';
 import { ReleaseCatalogItem } from './components/ReleaseCatalogItem';
-import { DiscographySetupModal } from './components/DiscographySetupModal';
 import {
   getCachedReleases,
   subscribeToReleases,
@@ -17,7 +15,6 @@ export const Discography: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
-  const [showSetup, setShowSetup] = useState(false);
 
   useEffect(() => {
     // Initialize Realtime channel
@@ -60,19 +57,10 @@ export const Discography: React.FC = () => {
   return (
     <div className="pb-12">
       {/* Header */}
-      <header className="mb-8 md:mb-10 text-center md:text-left relative">
+      <header className="mb-8 md:mb-10 text-center md:text-left">
         <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest">
           Discography
         </h2>
-
-        {/* DEV ONLY: Supabase Setup Button */}
-        <button
-          onClick={() => setShowSetup(true)}
-          className="absolute right-0 top-0 p-2 text-text-secondary hover:text-text-primary transition-colors"
-          title="Supabase Setup (Dev Only)"
-        >
-          <Settings size={18} />
-        </button>
       </header>
 
       {/* Filter Tabs & Integrated Collapsible Search */}
@@ -103,12 +91,6 @@ export const Discography: React.FC = () => {
           ))
         )}
       </div>
-
-      {/* Supabase Schema Modal */}
-      <DiscographySetupModal
-        isOpen={showSetup}
-        onClose={() => setShowSetup(false)}
-      />
     </div>
   );
 };

@@ -25,7 +25,8 @@ import {
   banUserInFirestore, 
   unbanUserInFirestore, 
   deleteTransmissionFromFirestore, 
-  deleteReplyFromFirestore 
+  deleteReplyFromFirestore,
+  syncOrphanReports
 } from '../../services/frequencyService';
 
 export const CoreRoom: React.FC = () => {
@@ -76,7 +77,10 @@ export const CoreRoom: React.FC = () => {
   useEffect(() => {
     if (!isUnlocked) return;
 
-    const unsubReports = subscribeReports(setReports);
+    const unsubReports = subscribeReports((incomingReports) => {
+      setReports(incomingReports);
+      syncOrphanReports(incomingReports);
+    });
     const unsubBlacklists = subscribeBlacklists(setBlacklists);
 
     return () => {
@@ -436,7 +440,12 @@ export const CoreRoom: React.FC = () => {
                               <p><span className="text-text-secondary">Tipe Konten:</span> <span className="uppercase text-amber-500/80">{report.targetType}</span></p>
                               <p><span className="text-text-secondary">Alasan:</span> <strong className="text-text-primary">{report.reason}</strong></p>
                               {report.note && (
-                                <p><span className="text-text-secondary">Catatan:</span> <span className="italic">"{report.note}"</span></p>
+                                <p className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-text-secondary">Catatan:</span> 
+                                  <span className="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] rounded-sm font-semibold">
+                                    {report.note}
+                                  </span>
+                                </p>
                               )}
                               <p><span className="text-text-secondary">Pelapor:</span> {report.reporterId}</p>
                             </div>

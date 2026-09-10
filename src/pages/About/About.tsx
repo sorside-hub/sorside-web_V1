@@ -6,7 +6,6 @@ import { getCachedGlossary, subscribeToGlossary, revalidateGlossary } from '../.
 import { Article } from '../../types';
 import { Release } from '../../types/discography';
 import { GlossaryItem } from '../../types/glossary';
-import { AboutSqlSetup } from './components/AboutSqlSetup';
 import { contactData } from '../../data/contact';
 import { SocialLink } from '../Contact/components/SocialLink';
 import { PlatformLink } from '../Contact/components/PlatformLink';
@@ -56,14 +55,11 @@ export const About: React.FC = () => {
         <h2 className="text-4xl md:text-5xl font-display uppercase tracking-widest text-text-primary">
           About
         </h2>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="w-8 h-[1px] bg-accent" />
-            <p className="font-mono text-xs text-text-secondary uppercase tracking-widest">
-              // System.Glossary
-            </p>
-          </div>
-          <AboutSqlSetup />
+        <div className="flex items-center gap-3">
+          <span className="w-8 h-[1px] bg-accent" />
+          <p className="font-mono text-xs text-text-secondary uppercase tracking-widest">
+            // System.Glossary
+          </p>
         </div>
       </header>
 
